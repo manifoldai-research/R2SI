@@ -1,0 +1,4 @@
+# The root READMEs use centered HTML blocks and sized <img> tags that a markdown
+# formatter rewrites into plain markdown, dropping the centering and widths.
+README.md
+README_zh.md
