@@ -20,14 +20,14 @@ def build_release(workspace, source_project, checkpoints, *, skill_updates=(), m
         check_text(update.get('text', ''), known_task_ids)
     ws = workspace if isinstance(workspace, Workspace) else Workspace(workspace)
     source = Path(source_project).resolve(strict=True)
-    if not (source / "XPolicyLab/policy/WorldScape_RSI").is_dir():
+    if not (source / "XPolicyLab/policy/WorldScape_R2SI").is_dir():
         raise ValueError("Source project lacks the complete standard adapter")
     root = ws.path("releases", uuid.uuid4().hex)
     root.mkdir(parents=True)
     shutil.copytree(source / "XPolicyLab", root / "XPolicyLab",
                     ignore=shutil.ignore_patterns("__pycache__", "*.pyc", ".git", "release.json"))
     shutil.copytree(source / "env_cfg", root / "env_cfg")
-    harness = root / "XPolicyLab/policy/WorldScape_RSI/harness"
+    harness = root / "XPolicyLab/policy/WorldScape_R2SI/harness"
     library = load_library(root)
     for update in skill_updates:
         key = update["id"]
@@ -67,13 +67,13 @@ def build_release(workspace, source_project, checkpoints, *, skill_updates=(), m
         if not editable_path(update['path']):
             raise ValueError('Code update is outside the candidate tool implementation')
         compile(update['content'], update['path'], 'exec')
-        target = harness/update['path']
+        target = harness.parent/update['path']
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(update['content'], encoding='utf8')
     load_library(root)  # Check dependencies and actual candidate Skill loading.
     wam_path = harness / "configs/wam_skills.json"
     wam = json.loads(wam_path.read_text())
-    model_root = root / "XPolicyLab/policy/WorldScape_RSI"
+    model_root = root / "XPolicyLab/policy/WorldScape_R2SI"
     model_files = {name for spec in wam.values() for name in spec["source_files"]}
     sources = {name: sha256(model_root / name) for name in sorted(model_files)}
     for name, variant in (("worldscape-wam-memory", "memory"), ("worldscape-wam-nomemory", "flash")):

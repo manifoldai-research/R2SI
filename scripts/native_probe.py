@@ -22,7 +22,7 @@ ws = Workspace(args.workspace)
 os.environ.update(ws.environment())
 os.environ["CUDA_VISIBLE_DEVICES"] = str(args.gpu)
 os.environ["OMP_NUM_THREADS"] = "1"
-model_root = PROJECT / "XPolicyLab/policy/WorldScape_RSI/worldscape-policy"
+model_root = PROJECT / "XPolicyLab/policy/WorldScape_R2SI/worldscape-policy"
 sys.path[:0] = [str(model_root), str(model_root / "src"), str(PROJECT / "dependencies")]
 result = {"variant": args.variant, "actual_gpu_inference": False, "synthetic_observation": True,
           "robot_actions_executed": 0, "training_performed": False,
@@ -32,10 +32,10 @@ model = None
 try:
     import numpy as np
     import torch
-    from XPolicyLab.policy.WorldScape_RSI.xpolicylab_adapter.runtime_config import validate_config, resolve_checkpoint_deployment_config
-    from XPolicyLab.policy.WorldScape_RSI.wam_model import Model
+    from XPolicyLab.policy.WorldScape_R2SI.xpolicylab_adapter.runtime_config import validate_config, resolve_checkpoint_deployment_config
+    from XPolicyLab.policy.WorldScape_R2SI.wam_model import Model
     manifest = json.loads((PROJECT / "provenance/checkpoints.private.json").read_text())
-    catalog = json.loads((PROJECT / "XPolicyLab/policy/WorldScape_RSI/harness/configs/wam_skills.json").read_text())
+    catalog = json.loads((PROJECT / "XPolicyLab/policy/WorldScape_R2SI/harness/configs/wam_skills.json").read_text())
     skill = "worldscape-wam-memory" if args.variant == "memory" else "worldscape-wam-nomemory"
     config = dict(catalog[skill]["config"])
     config.update(checkpoint_path=manifest[args.variant]["path"], device="cuda:0",
@@ -60,7 +60,7 @@ try:
             config["device"] = "cpu"
         model = Model(config)
         if config.get("short_window_for_non_memory_tasks"):
-            from XPolicyLab.policy.WorldScape_RSI.harness.wam import enforce_uniform_history
+            from XPolicyLab.policy.WorldScape_R2SI.harness.wam import enforce_uniform_history
             enforce_uniform_history(model)
         if args.bf16_experiment:
             model.backend.policy.to(device="cuda:0", dtype=torch.bfloat16)

@@ -25,7 +25,7 @@ def configuration(workspace, robodojo_root, sim_python, flash_checkpoint,
         raise ValueError("sim-python must be an absolute interpreter path on the simulator host")
     source = Path(robodojo_root).resolve(strict=True)
     plan = prepare(source, tasks=tasks)
-    catalog = json.loads((PROJECT / "XPolicyLab/policy/WorldScape_RSI/harness/configs/wam_skills.json").read_text())
+    catalog = json.loads((PROJECT / "XPolicyLab/policy/WorldScape_R2SI/harness/configs/wam_skills.json").read_text())
     checkpoints = {}
     for profile, skill, directory in (
         ("flash", "worldscape-wam-nomemory", flash_checkpoint),

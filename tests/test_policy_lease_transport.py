@@ -9,7 +9,7 @@ from test_policy_service import Worker
 
 def test_remote_client_renews_while_idle_and_closes_context(tmp_path,monkeypatch):
     from XPolicyLab.client_server.ws.protocol.codec import encode_frame,decode_frame
-    from XPolicyLab.policy.WorldScape_RSI.harness.remote_wam import RemoteWam,identity
+    from XPolicyLab.policy.WorldScape_R2SI.harness.remote_wam import RemoteWam,identity
     async def run():
         spec={"profile":"flash"}
         worker=Worker()

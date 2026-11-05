@@ -50,16 +50,9 @@ Remote client and server use the same lease protocol. `scripts/serve_policy.py` 
 
 ## Training / 训练
 
-The default configuration updates generic Skills and Memory. To enable model training, add:
-- `training`: dataset index, provenance file, `flash`/`memory` recipes, GPUs, interpreter, step budget and timeout.
-- `generation_service`: address, GPUs, TLS files and startup timeout for candidate weights.
-- Optional `training_collection_cases`: additional collection cases with the same layout selection rules.
+WSP training is a reserved interface (stub). The outer loop reports `available: false` even for older campaigns with a `training` section. A training request raises `WSPTrainingUnavailable` before publishing snapshots, starting collection, launching a trainer or creating a checkpoint. Skill/Memory updates and WAM inference continue to work. The existing Python call signature and six-argument `train.sh` CLI are reserved for future integration; no release date is committed.
 
-The reflection Agent can request training within the configured budget. Training reads its dataset snapshot; a separate service loads the new checkpoint for candidate validation. Active episodes retain their original version.
-
-默认配置更新通用 Skill 和 Memory。配置训练数据、预算及新权重服务后，反思 Agent 可以在预算内请求训练；候选验证通过独立服务使用新权重，正在运行的回合继续使用原版本。
-
-See [native training](../XPolicyLab/policy/WorldScape_RSI/worldscape-policy/docs/native_training.md) and [data hot loading](../XPolicyLab/policy/WorldScape_RSI/worldscape-policy/docs/robodojo_hotload.md).
+WSP 训练当前为预留接口。即使旧配置中带有 `training`，外层也会报告训练不可用。训练请求会在发布快照、启动采集或训练、创建权重之前明确报错。Skill/Memory 更新和 WAM 推理可继续使用，Python 参数与 `train.sh` 的六个参数保留以便后续接入，暂未承诺发布日期。
 
 ## Outputs and control / 输出与控制
 

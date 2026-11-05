@@ -10,13 +10,13 @@ import torch
 import yaml
 
 PROJECT = Path(__file__).resolve().parents[1]
-POLICY = PROJECT / 'XPolicyLab/policy/WorldScape_RSI'
+POLICY = PROJECT / 'XPolicyLab/policy/WorldScape_R2SI'
 WSP = POLICY / 'worldscape-policy'
 for path in (PROJECT, WSP, WSP / 'src'):
     if str(path) not in sys.path:
         sys.path.insert(0, str(path))
 
-from XPolicyLab.policy.WorldScape_RSI.xpolicylab_adapter.runtime_config import validate_config
+from XPolicyLab.policy.WorldScape_R2SI.xpolicylab_adapter.runtime_config import validate_config
 
 
 def test_default_and_explicit_deployments_select_robodojo():
@@ -54,12 +54,12 @@ def test_unsupported_benchmark_rejected_before_environment_setup(script, args):
 
 @pytest.mark.parametrize('multi', [False, True])
 def test_model_dispatches_only_robodojo_backends(multi):
-    from XPolicyLab.policy.WorldScape_RSI.wam_model import Model
+    from XPolicyLab.policy.WorldScape_R2SI.wam_model import Model
     module = 'multi_gpu.MultiGpuModel' if multi else 'robodojo_model.RoboDojoModel'
     cfg = {'eval_batch': multi, 'multi_gpu': {'enabled': multi}}
     backend = SimpleNamespace(model_cfg=cfg, mode=SimpleNamespace(value='interactive'),
                               action_horizon=24, supports_batch=True, requires_explicit_commit=True)
-    with patch('XPolicyLab.policy.WorldScape_RSI.xpolicylab_adapter.' + module, return_value=backend):
+    with patch('XPolicyLab.policy.WorldScape_R2SI.xpolicylab_adapter.' + module, return_value=backend):
         model = Model(cfg)
     assert model.backend is backend
     assert model.get_runtime_info()['runtime_profile'] == 'robodojo'

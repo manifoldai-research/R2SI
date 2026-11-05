@@ -1,5 +1,4 @@
 """Continuous local RSI: collect, reflect, build/train, validate, activate, repeat."""
-from concurrent.futures import ThreadPoolExecutor
 import importlib.util
 import json
 import os
@@ -16,7 +15,7 @@ from .reflection_context import HARNESS, load_library
 from .registry import Registry
 from .release_builder import build_release
 from .storage import Workspace, sha256
-from .training_agent import training_metrics
+from XPolicyLab.policy.WorldScape_R2SI.training import require_training_backend
 from .official_layouts import MODE, validate_plan, reject_open, uses_official_layouts
 
 
@@ -52,7 +51,7 @@ class LocalLoop:
         if self.config.get('pool_bootstrap'):
             spec=importlib.util.spec_from_file_location('local_pool_bootstrap',self.config['pool_bootstrap'])
             module=importlib.util.module_from_spec(spec);spec.loader.exec_module(module);module.configure_pool()
-        from XPolicyLab.policy.WorldScape_RSI.harness.provider import ResponsesClient
+        from XPolicyLab.policy.WorldScape_R2SI.harness.provider import ResponsesClient
         return ResponsesClient(json.loads((harness/'configs/inner_agent.json').read_text()))
 
     def snapshot(self):
@@ -70,45 +69,8 @@ class LocalLoop:
         return store.latest()
 
     def train(self, request, original, baseline):
-        cfg=self.config['training'];steps=request['steps'];profile=request['profile']
-        if steps>cfg['max_steps_per_round']:
-            raise ValueError('Requested training exceeds the campaign resource budget')
-        snapshot=self.snapshot()
-        overrides=[*cfg.get('overrides',[]),'optimizer.lr='+str(request['learning_rate']),
-                   'model.checkpoint_dir='+original['checkpoints'][profile]['path'],
-                   'training.run_steps=null','training.save_at_end=true']
-        with ThreadPoolExecutor(max_workers=2) as pool:
-            training=pool.submit(Jobs(self.ws).train, python=cfg.get('python',os.sys.executable),
-                xpolicy_root=self.project/'XPolicyLab',config=cfg['configs'][profile],snapshot=snapshot,
-                gpus=cfg['gpus'],max_steps=steps,timeout_s=cfg['timeout_s'],overrides=overrides)
-            collector=None
-            if self.config.get('training_collection_cases'):
-                collector=pool.submit(self.evaluator,baseline,self.config['training_collection_cases'],record=True)
-            while not training.done():
-                # Publishing appends only fully acknowledged successes. The native trainer
-                # switches snapshots collectively at its own iteration boundary.
-                self.snapshot()
-                time.sleep(2)
-            job=training.result()
-            if collector:collector.result()
-        latest=self.snapshot()
-        if job['status']!='completed':
-            raise RuntimeError('Native training '+job['status']+'; job '+job['id'])
-        candidates=[p for p in Path(job['checkpoint_dir']).glob('checkpoint-*')
-                    if (p/'checkpoint_manifest.json').exists() and (p/'.complete').exists()]
-        if not candidates:raise RuntimeError('Trainer returned without a complete exported checkpoint')
-        checkpoint=max(candidates,key=lambda p:int(p.name.split('-')[-1]))
-        with self.ws.path('jobs',job['id'],'output.log').open('rb') as f:
-            f.seek(0,2);f.seek(max(0,f.tell()-2*1024*1024));metrics=training_metrics(f.read().decode(errors='replace'))
-        if not metrics:raise RuntimeError('No real optimizer metrics were emitted')
-        checkpoints=json.loads(json.dumps(original['checkpoints']))
-        checkpoints[profile]=dict(path=str(checkpoint),files={p.relative_to(checkpoint).as_posix():sha256(p)
-                                   for p in checkpoint.rglob('*') if p.is_file()})
-        provenance=dict(job_id=job['id'],profile=profile,request=request,
-                        starting_snapshot=snapshot,latest_snapshot=latest,metrics=metrics,
-                        checkpoint=str(checkpoint))
-        self.ws.atomic('training/'+job['id']+'.json',provenance)
-        return checkpoints,provenance
+        """Reserved outer-loop hook; reject before publishing data or collecting."""
+        require_training_backend()
 
     def round(self):
         baseline=self.registry.status()['pointers']['development'];original=self.registry.get(baseline)
@@ -136,16 +98,13 @@ class LocalLoop:
                     history[-1]['training_metrics']=row['training'].get('metrics', [])
             known_tasks=sorted({c['task'] for c in self.config['collection_cases']+self.config['validation_cases']+outcomes if c.get('task')})
             proposal=self.outer.reflect(client,outcomes,load_library(source).entries,known_task_ids=known_tasks,source_root=source,
-                training_config={'available':bool(training), 'max_steps_per_round':training.get('max_steps_per_round'),
+                training_config={'available':False, 'status':'not_implemented', 'max_steps_per_round':training.get('max_steps_per_round'),
                                  'profiles':list(training.get('configs',{})),
                                  'data_tasks':training.get('data_tasks',[]),
                                  'data_description':training.get('data_description','')},iteration_history=history)
         finally:client.close()
         checkpoints=original['checkpoints'];provenance=None
         if proposal['training_requested']:
-            if not self.config.get('training'):
-                raise ValueError('This campaign has no training configuration')
-            self.ws.atomic('local-loop-phase.json',dict(phase='training',baseline=baseline,time=time.time()))
             checkpoints,provenance=self.train(proposal['training'],original,baseline)
         manifest=build_release(self.ws,source,checkpoints,skill_updates=proposal['skill_updates'],
             memory_updates=proposal.get('memory_updates',()),code_updates=proposal.get('code_updates',()),
@@ -154,9 +113,10 @@ class LocalLoop:
             manifest['policy_client_config']=deploy(self.ws,self.project,manifest,proposal['training']['profile'],
                 original['policy_client_config'],self.config['generation_service'])
         if proposal.get('code_updates'):
-            check=Jobs(self.ws).run([os.sys.executable,'-B','-m','unittest','discover','-s',
-                str(Path(manifest['root'])/HARNESS/'tests'),'-p','test_*.py'],
-                cwd=manifest['root'],job_kind='preflight',timeout_s=180,
+            check=Jobs(self.ws).run([os.sys.executable,'-B','-m','pytest','-p','no:cacheprovider','-q',
+                str(Path(manifest['root'])/HARNESS/'tests'),
+                str((Path(manifest['root'])/HARNESS).parent/'tests')],
+                cwd=manifest['root'],job_kind='preflight',timeout_s=600,
                 environment={'PYTHONPATH':os.pathsep.join([manifest['root'],str(Path(manifest['root'])/'XPolicyLab')])})
             if check['status']!='completed':
                 raise RuntimeError('Candidate tool tests failed; baseline retained. Job '+check['id'])

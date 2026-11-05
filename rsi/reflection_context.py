@@ -4,8 +4,11 @@ import importlib.util
 import json
 from pathlib import Path
 
-HARNESS = 'XPolicyLab/policy/WorldScape_RSI/harness'
+HARNESS = 'XPolicyLab/policy/WorldScape_R2SI/harness'
 VENDOR = 'vendor/policy/RoboRSI_RoboProbe'
+AGENT_FILES = {'agent.py', 'actions.py', 'cameras.py', 'control.py', 'frames.py',
+               'kinematics.py', 'objects.py', 'observe.py', 'planning.py', 'prompt.py',
+               'robo.py', 'scene.py', 'segmenter.py', 'skills.py', 'timing.py', 'tools.py'}
 
 
 def load_library(root):
@@ -19,7 +22,7 @@ def load_library(root):
 def editable_path(path):
     p = Path(path)
     return (not p.is_absolute() and '..' not in p.parts and
-            (p.as_posix().startswith(VENDOR+'/') and p.suffix == '.py'))
+            p.as_posix() in AGENT_FILES)
 
 
 def read_episode(row, start=0, count=4, images=False):
@@ -87,7 +90,8 @@ def read_artifact(root, skills, path, offset):
         rel = Path(path)
         if not (editable_path(path) or (rel.parent.as_posix() == 'memory' and rel.suffix == '.md')):
             raise ValueError('Read a listed Skill, Memory rule or tool source')
-        text = (Path(root)/HARNESS/rel).read_text(encoding='utf8')
+        base = (Path(root)/HARNESS).parent if editable_path(path) else Path(root)/HARNESS
+        text = (base/rel).read_text(encoding='utf8')
     if type(offset) is not int or not 0 <= offset <= len(text):
         raise ValueError('Invalid offset')
     end = min(len(text), offset+16000)

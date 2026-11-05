@@ -52,7 +52,7 @@ def execute(workspace, input_path):
         from rsi.worker import VersionedModel
         from rsi.evaluator import run_episode
         env = make_environment(dict(meta, device=value['device']))
-        model = VersionedModel(ws.root, dict(policy_name='WorldScape_RSI', bench_name='RoboDojo',
+        model = VersionedModel(ws.root, dict(policy_name='WorldScape_R2SI', bench_name='RoboDojo',
             env_cfg_type='arx_x5', action_type='joint', eval_batch=False, seed=meta['seed']),
             validation_release=meta['release_id'], registry=Registry(ws, verifier=verify_code),
             timeout_s=config.get('agent_timeout_s', 600),

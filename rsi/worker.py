@@ -27,10 +27,10 @@ def _serve(connection, manifest, config, environment):
         for name in list(sys.modules):
             if name == "XPolicyLab" or name.startswith("XPolicyLab.") or name == "client_server" or name.startswith("client_server."):
                 del sys.modules[name]
-        from XPolicyLab.policy.WorldScape_RSI.model import Model
+        from XPolicyLab.policy.WorldScape_R2SI.model import Model
         import inspect
         if Path(inspect.getfile(Model)).resolve() != (
-                root / "XPolicyLab/policy/WorldScape_RSI/harness/model.py").resolve():
+                root / "XPolicyLab/policy/WorldScape_R2SI/harness/model.py").resolve():
             # The integration model may be a subclass defined in model.py.
             if not Path(inspect.getfile(Model)).resolve().is_relative_to(root):
                 raise RuntimeError("Policy imported outside the pinned release")
@@ -129,13 +129,13 @@ class VersionedModel:
                     "WRSI_WAM_NOMEMORY_CHECKPOINT": manifest["checkpoints"]["flash"]["path"],
                     "WRSI_WAM_MEMORY_DEVICE": self.devices[0], "WRSI_WAM_NOMEM_DEVICE": self.devices[1],
                     "WRSI_WAM_NOMEMORY_DEVICE": self.devices[1],
-                    "WRSI_WORLDSCAPE_ROOT": str(root / "XPolicyLab/policy/WorldScape_RSI/worldscape-policy"),
-                    "WORLDSCAPE_POLICY_ROOT": str(root / "XPolicyLab/policy/WorldScape_RSI/worldscape-policy"),
+                    "WRSI_WORLDSCAPE_ROOT": str(root / "XPolicyLab/policy/WorldScape_R2SI/worldscape-policy"),
+                    "WORLDSCAPE_POLICY_ROOT": str(root / "XPolicyLab/policy/WorldScape_R2SI/worldscape-policy"),
                 })
                 if manifest.get("policy_client_config"):
                     env["WRSI_POLICY_CLIENT_CONFIG"] = manifest["policy_client_config"]
                 env["R2SI_DIAGNOSTICS_DIR"] = str(self.ws.path("diagnostics", self.episode))
-                cfg = dict(self.config, release_path=str(root / "XPolicyLab/policy/WorldScape_RSI/harness/release.json"),
+                cfg = dict(self.config, release_path=str(root / "XPolicyLab/policy/WorldScape_R2SI/harness/release.json"),
                            release_sha256=manifest["harness_release_sha256"])
                 context = multiprocessing.get_context("spawn")
                 self.pipe, child = context.Pipe()

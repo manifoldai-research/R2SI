@@ -59,48 +59,8 @@ class Jobs:
         return result
 
     def train(self, *, python, xpolicy_root, config, snapshot, gpus, max_steps, timeout_s, overrides=()):
-        """Start the teammate's native trainer with its collective hotload enabled.
-
-        Config must name real base weights, transforms/statistics and data root.
-        No synthetic optimizer result or model export is invented.
-        """
-        from worldscape_policy.data.robodojo_snapshots import SnapshotStore
-        if not gpus or len(set(gpus)) != len(gpus) or any(type(x) is not int or x < 0 for x in gpus):
-            raise ValueError("Select explicitly reserved GPU indices")
-        if type(max_steps) is not int or max_steps <= 0:
-            raise ValueError("A positive training step budget is required")
-        for gpu in gpus:
-            occupied = subprocess.check_output(["nvidia-smi", "-i", str(gpu),
-                "--query-compute-apps=pid", "--format=csv,noheader,nounits"],
-                text=True, timeout=10).strip()
-            if occupied:
-                raise RuntimeError(f"GPU {gpu} is occupied; reserve resources before training")
-        store = SnapshotStore(self.ws.path("datasets/snapshots"))
-        record = store.resolve(snapshot, verify_files=True)
-        # The native loader initializes against immutable version zero, then
-        # consumes later published snapshots. Passing a merged index as the
-        # base breaks its statistics/index identity check on the next round.
-        bootstrap = snapshot
-        while record['manifest'].get('previous'):
-            bootstrap = record['manifest']['previous']
-            record = store.resolve(bootstrap, verify_files=True)
-        output = self.ws.path("checkpoints", uuid.uuid4().hex)
-        output.mkdir(parents=True)
-        model_root = Path(xpolicy_root) / "policy/WorldScape_RSI/worldscape-policy"
-        argv = [str(python), "-B", "-m", "torch.distributed.run",
-                "--standalone", "--nproc_per_node=" + str(len(gpus)),
-                "-m", "worldscape_policy.cli.train", "--config", str(Path(config).resolve()),
-                *overrides,
-                "data_loader.hotload.enabled=true",
-                "data_loader.hotload.manifest_dir=" + str(store.directory),
-                "data_loader.hotload.journal_dir=" + str(output / "data_versions"),
-                "data_loader.dataset_kwargs.precomputed_index_path=" + record["index_path"],
-                "training.checkpoint_dir=" + str(output),
-                "training.max_steps=" + str(max_steps)]
-        environment = {"CUDA_VISIBLE_DEVICES": ",".join(map(str, gpus)),
-                       "PYTHONPATH": os.pathsep.join([str(Path(xpolicy_root).parent),
-                                                     str(xpolicy_root), str(model_root / "src")])}
-        job = self.run(argv, cwd=model_root, job_kind="training", timeout_s=timeout_s, environment=environment)
-        job.update(checkpoint_dir=str(output), starting_snapshot=bootstrap, requested_snapshot=snapshot)
-        self.ws.atomic("jobs/" + job["id"] + "/status.json", job)
-        return job
+        """Reserved WSP training hook; the backend is not connected yet."""
+        from XPolicyLab.policy.WorldScape_R2SI.training import train_wsp
+        return train_wsp(python=python, xpolicy_root=xpolicy_root, config=config,
+                         snapshot=snapshot, gpus=gpus, max_steps=max_steps,
+                         timeout_s=timeout_s, overrides=overrides)

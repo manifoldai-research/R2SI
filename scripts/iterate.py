@@ -5,7 +5,7 @@ import os
 from pathlib import Path
 import sys
 PROJECT=Path(__file__).resolve().parents[1]
-NATIVE=PROJECT/'XPolicyLab/policy/WorldScape_RSI/worldscape-policy/src'
+NATIVE=PROJECT/'XPolicyLab/policy/WorldScape_R2SI/worldscape-policy/src'
 sys.path[:0]=[str(PROJECT),str(PROJECT/'XPolicyLab'),str(NATIVE)]
 from rsi.local_loop import LocalLoop
 from rsi.storage import Workspace

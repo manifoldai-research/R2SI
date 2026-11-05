@@ -8,7 +8,7 @@ import time
 
 PROJECT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PROJECT), str(PROJECT / "XPolicyLab"),
-               str(PROJECT / "XPolicyLab/policy/WorldScape_RSI/worldscape-policy/src")]
+               str(PROJECT / "XPolicyLab/policy/WorldScape_R2SI/worldscape-policy/src")]
 from rsi.storage import Workspace
 from rsi.experience import publish_snapshot
 
