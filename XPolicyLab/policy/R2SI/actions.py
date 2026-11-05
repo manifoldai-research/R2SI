@@ -93,7 +93,7 @@ class StageResult:
     moved: bool = False
     steps: int = 0
     reason: str | None = None        # why the stage could not run or finish
-    code: str | None = None          # unreachable, interrupted, budget
+    code: str | None = None          # unreachable, interrupted
     reasons: list = field(default_factory=list)
     stopped_short_mm: float | None = None
     position: np.ndarray | None = None
@@ -793,12 +793,6 @@ class Runner:
                 careful = True
         empty = all(isinstance(stages[arm], Free) and not ctl.may_hold(observation, arm) for arm in paths)
         actions, arm_steps = ctl.actions_for(observation, paths, openings, careful, empty)
-        homing = all(isinstance(stages[arm], Free) and stages[arm].home for arm in paths)
-        left = observation.remaining
-        if len(actions) > left and not homing:
-            ctl.counters["refusals"] += 1
-            results.update({arm: StageResult(ok=False, code="budget", reason=f"this stage needs {len(actions)} native steps but only {left} remain") for arm in paths})
-            return results
         contact = any(isinstance(stages[arm], Line) and stages[arm].contact for arm in paths)
         # Short increments of a contact stroke follow each other without waiting: their goals are absolute, so lag does not add up.
         run = ctl.run(actions, arm_steps, openings, contact=contact, settle=not contact)

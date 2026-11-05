@@ -105,7 +105,7 @@ class Model(ModelTemplate):
         observation = bridge.observation
         if observation is None or (episode is self._episode and observation.step % 25):
             return
-        row = {"steps": observation.step, "step_lim": observation.step_limit, "decisions": agent.decisions, "cells": agent.cells, "keepalive_holds": bridge.keepalive_holds,
+        row = {"steps": observation.step, "decisions": agent.decisions, "cells": agent.cells, "keepalive_holds": bridge.keepalive_holds,
                "icl_reference": agent.reference.info(),
                "interruptions": bridge.interruptions, "contact_stops": bridge.contact_stops, **episode["controller"].counters, **episode["tools"].counters}
         path = Path(self.trace_dir) / ("metrics-" + episode["client"].session_id + ".json")

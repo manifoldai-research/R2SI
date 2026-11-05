@@ -44,7 +44,7 @@ class KinematicEnv:
         image = np.zeros((480, 640, 3), dtype=np.uint8)
         return {"instruction": "Do the thing.", "state": {k: v.tolist() for k, v in self.state.items()},
                 "vision": {c: {"color": image} for c in ("cam_head", "cam_left_wrist", "cam_right_wrist")},
-                "additional_info": {"step": self.step, "step_lim": self.step_limit}, "task_name": "must_not_reach_the_agent", "seed": 7}
+                "additional_info": {"frequency": 25}, "task_name": "must_not_reach_the_agent", "seed": 7}
 
     def apply(self, action):
         self.step += 1
@@ -157,24 +157,28 @@ def run_episode(cells, step_limit=1000, holds=True, keepalive_s=5.0, segmenter=N
     agent = Agent(client, tools, bridge, retriever=retriever)
     thread = threading.Thread(target=agent.run, daemon=True)
     thread.start()
-    bridge.update_obs(env.observation())
-    steps = 0
-    while steps < max_steps:
-        if bridge._failure is not None:
-            raise bridge._failure
-        if not bridge._queue:
-            # The episode is over for this harness when the model is out of cells and has been sent every result.
-            if client.waiting:
-                break
-            time.sleep(0.0005)
-            continue
-        action = bridge.get_action()
-        env.apply(action)
+    try:
         bridge.update_obs(env.observation())
-        steps += 1
-    client.ended.set()
-    bridge.close()
-    thread.join(timeout=5.0)
+        while env.step < min(max_steps, env.step_limit):
+            if bridge._failure is not None:
+                raise bridge._failure
+            if not bridge._queue:
+                # Scripted model completion is another evaluator-side ending condition.
+                if client.waiting:
+                    break
+                time.sleep(0.0005)
+                continue
+            action = bridge.get_action()
+            env.apply(action)
+            # The official client may end without sending another observation.
+            if env.step >= env.step_limit:
+                break
+            bridge.update_obs(env.observation())
+    finally:
+        client.ended.set()
+        bridge.close()
+        thread.join(timeout=5.0)
+    assert not thread.is_alive(), "Agent must exit when the evaluator closes an episode"
     return client, env, tools
 
 

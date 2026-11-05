@@ -10,10 +10,10 @@ Everything the running policy reads, where it comes from and what it is used for
 | Arm joint state, end-effector pose | Official observation `state` | Grasp point, planning, tracking feedback |
 | Gripper reading | Official observation `state.<arm>_ee_joint_state` | Hold check and width, which follow from the published gripper rule |
 | Instruction | Official observation `instruction` | Shown to the model |
-| Action count and step limit | `deploy.py` copies `take_action_cnt` and `step_lim`; the limit differs from one job to another | Step budget shown to the model; refusing motions that cannot finish |
+| Local action count | `bridge.py` counts a pending action when its following observation arrives, including keepalive holds | Tracking this episode's action history and motion cost; repeated observations without a pending action do not increment it |
 | Results of the agent's own actions | Joint state after each action | Arrival, blocked, interrupted |
 
-Not read from the evaluator: depth, object poses, object models, simulator state, contact sensors, success flags, reward or score values, task name, layout files or indices, scene files, seed, anything from an earlier live episode. `model.py` inherits the template's empty `prepare_case`, so case metadata does not arrive. Deployment inputs are restricted to its explicit allowlist and the ICL settings in `configured_retriever`.
+Not read from the evaluator: its action counter, task step limit, remaining allowance, depth, object poses, object models, simulator state, contact sensors, success flags, reward or score values, task name, layout files or indices, scene files, seed, anything from an earlier live episode. All observation metadata is ignored. `model.py` inherits the template's empty `prepare_case`, so case metadata does not arrive. Deployment inputs are restricted to its explicit allowlist and the ICL settings in `configured_retriever`.
 
 ## External demonstration reference
 
@@ -80,4 +80,4 @@ The section "How work is scored" states how the benchmark usually judges work: e
 
 ## How an episode ends
 
-The evaluator ends an episode when its own check succeeds, when it finds a hard failure, or when the step limit is reached, as in the official flow. Nothing in the prompt or tool results reports any of this, and the handbook tells the agent that being still able to act tells it nothing it can use. The agent has no call that ends the work.
+The evaluator ends an episode when its own check succeeds, when it finds a hard failure, or when the step limit is reached, as in the official flow. The Agent does not know that limit or the ending reason. Closing the episode interrupts pending native motions, WAM calls and waits. A terminal action without a following observation is not added to the local acknowledged-action count. The handbook tells the Agent that being still able to act tells it nothing it can use. The Agent has no call that ends the work.

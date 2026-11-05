@@ -29,7 +29,8 @@ class Robo:
 
     def state(self):
         """Current robot state and step counters: {"arms": {arm: {"position", "quaternion_wxyz", "opening", "width_m", "joints"}},
-        "steps_used", "step_limit", "steps_left", "home_steps"}. opening is the official gripper reading; while closed on something
+        "steps_used", "home_steps"}. steps_used counts this episode's actions acknowledged by later observations, including holds;
+        the total allowance and remaining steps are unknown. opening is the official gripper reading; while closed on something
         it stays above 0, and width_m is the distance between the fingers it implies. home_steps estimates returning both arms."""
         return self._send("state")
 
@@ -111,7 +112,7 @@ class Robo:
     def estimate(self, plan):
         """Native steps of a list of motions planned one after another without moving, each starting where the previous one ends:
         [{"op": "move", "arm", "position", "quaternion_wxyz"}, {"op": "line", ...}, {"op": "grip", "arm", "opening"}, {"op": "home", "arm"}, {"op": "wait", "steps"}].
-        Returns {"ok", "segments", "total_steps", "steps_left", "fits"}."""
+        Returns {"ok", "segments", "total_steps"}. Estimates motion cost, not whether it fits an unknown episode allowance."""
         return self._send("estimate", plan=plan)
 
     def hold_point(self, arm, name="tip", point=None, views=None):
