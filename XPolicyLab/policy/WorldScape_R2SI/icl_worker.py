@@ -13,21 +13,14 @@ sys.path.insert(0, str(PROJECT / "XPolicyLab"))
 
 def prepare(config_path, request):
     import icl_engine
-    from icl_engine import sources
     from icl_engine.compiler import verify_package
     from icl_engine.config import load_config
     from icl_engine.engine import ICLEngine
-    from PIL import Image
     from XPolicyLab.utils.process_data import decode_image_bit
 
-    # Process-local reader adapter. It never changes the installed engine or policy process.
-    class XPolicyLabEpisode(sources.RoboDojoEpisode):
-        def get_frame(self, index, view):
-            self._check(index, view)
-            return Image.fromarray(decode_image_bit(self._file[f"vision/{view}/colors"][int(index)]))
-
-    sources.RoboDojoEpisode = XPolicyLabEpisode
     cfg = load_config(config_path)
+    from XPolicyLab.policy.WorldScape_R2SI.robodojo_corpus import install_readers
+    install_readers(cfg.get("data", {}).get("official_root"))
     # Never reuse a package compiled with the engine's standard-JPEG-only reader.
     decoder_hash = hashlib.sha256(Path(sys.modules[decode_image_bit.__module__].__file__).read_bytes()).hexdigest()[:16]
     cfg["paths"]["packages"] = str(Path(cfg["paths"]["packages"]) / ("xpl-rgb1-" + decoder_hash))
