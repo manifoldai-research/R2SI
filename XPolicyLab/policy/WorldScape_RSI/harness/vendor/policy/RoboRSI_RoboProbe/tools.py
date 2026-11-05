@@ -35,7 +35,7 @@ def specs(library):
       function('list_skills','List shared capabilities and their possible uses; choose from current context.'),function('list_tools','List available reviewed Tools, including the two WAM Skills.'),
       function('read_skill','Read complete Skill text; follow next_offset.',{'id':{'type':'string','enum':ids('skill')},**paging},['id']),
       function('read_tool','Read the Tool interface before using it.',{'id':{'type':'string','enum':ids('tool')+sorted(BUILTINS)},**paging},['id']),
-      function('call_tool','Run a reviewed Tool. WAM Skill ids take empty arguments and propose a checkpoint-backed action chunk. Only the official evaluator executes native plans.',{'id':{'type':'string','enum':sorted(CODE_IDS)},'arguments':{'type':'object','description':'For robot-action-timing-tool and primitive-control, include op as a string in this object together with arm and other parameters. Example: {op: move, arm: left, position: [x,y,z]}. Do not nest under move and do not use action instead of op.','properties':{'op':{'type':'string','enum':['move','grip','grip_both','move_both','visual_align','move_tcp','move_ee','shift_ee','rotate_ee','wait']},'arm':{'type':'string','enum':['left','right']}}},'stage':{'type':'string'}},['id','arguments']),
+      function('call_tool','Run a reviewed Tool. WAM Skill ids take empty arguments and propose a checkpoint-backed action chunk. Only the official evaluator executes native plans.',{'id':{'type':'string','enum':sorted(CODE_IDS)},'arguments':{'type':'object','description':'For robot-action-timing-tool and primitive-control, include op as a string in this object together with arm and other parameters. Example: {op: move, arm: left, position: [x,y,z]}. Do not nest under move and do not use action instead of op.','properties':{'op':{'type':'string','enum':['move','move_candidates','grip','grip_both','move_both','visual_align','move_tcp','move_ee','shift_ee','rotate_ee','wait']},'arm':{'type':'string','enum':['left','right']}}},'stage':{'type':'string'}},['id','arguments']),
       function('inspect_rgb_region','Enlarge current RGB only. region is normalized [left,top,right,bottom] in 0..1; mapping returns full-image pixel coordinates.',{'camera':{'type':'string'},'region':{'type':'array','items':{'type':'number','minimum':0,'maximum':1},'minItems':4,'maxItems':4}},['camera','region'])]
     result.extend([
       function('assess_control','Choose control from public evidence before EVERY new WAM chunk. No robot action. Rejection permits native Tools, not a second assessment on the same frame.',{
@@ -125,6 +125,9 @@ def execute(policy,name,args,obs):
     if key=='primitive-control':return primitive(policy,a,obs)
     if any(k in a for k in ('steps','gripper')):raise ValueError('Timing is native; omit steps/gripper, use a separate grip call')
     op=a.get('op');arm=a.get('arm')
+    if op=='move_candidates':
+        from .candidate_motion import move_candidates
+        return move_candidates(policy,a,obs)
     if op not in ('move','grip','grip_both','move_both','visual_align'):raise ValueError('arguments.op must be move, grip, grip_both, move_both or visual_align; put arm and position/opening directly in arguments')
     if op=='move_both':return execute(policy,'move_both_tcp',a,obs)
     if op=='grip_both':return policy.native_move({s+'_gripper':a[s] for s in pose.ARMS},obs)
