@@ -21,3 +21,9 @@ keepalive_s: 90
 policy_service: null
 # SAM 3 weights (facebook/sam3).
 segmenter_checkpoint: checkpoints/sam3/sam3.pt
+# A configured engine is required to succeed before the first decision; null explicitly selects the no-reference baseline.
+icl_config: null
+icl_python: null
+icl_timeout_s: 180
+icl_max_images: 64
+icl_max_text_chars: 32000

@@ -140,7 +140,7 @@ def outputs(client):
     return [json.loads(item["output"]) for item in client.results]
 
 
-def run_episode(cells, step_limit=1000, holds=True, keepalive_s=5.0, segmenter=None, block=None, root=None, max_steps=4000, policy=None):
+def run_episode(cells, step_limit=1000, holds=True, keepalive_s=5.0, segmenter=None, block=None, root=None, max_steps=4000, policy=None, retriever=None):
     """Run scripted cells against the kinematic environment until they are used up. Returns (client, env, tools)."""
     spec = robot.load_spec(root)
     model = kinematics.ArmModel(root)
@@ -154,7 +154,7 @@ def run_episode(cells, step_limit=1000, holds=True, keepalive_s=5.0, segmenter=N
         tools.open_policy = policy
         tools.read_service = lambda url: {"config_sha256": "fake"}
     client = ScriptedClient(cells)
-    agent = Agent(client, tools, bridge)
+    agent = Agent(client, tools, bridge, retriever=retriever)
     thread = threading.Thread(target=agent.run, daemon=True)
     thread.start()
     bridge.update_obs(env.observation())

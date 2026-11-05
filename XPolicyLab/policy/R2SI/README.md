@@ -7,6 +7,7 @@ An agent that controls a two-arm robot by writing Python. It sees the three RGB 
 ## How it works
 
 - **Decision loop** (`agent.py`): the model writes a cell; the cell runs; its output and fresh images go back to the model. Cells share a namespace for the whole episode. Time passes only in native robot steps, so model and measurement time do not move the scene.
+- **Core ICL-RAG reference** (`icl.py`, `icl_worker.py`, `robo.reference`): the configured [ICL Engine](https://github.com/manifoldai-research/icl-engine) retrieves one demonstration before the first decision. Its verified, frozen prefix stays in every planning request. The Agent uses it for strategy and measures the live scene for execution. See [setup, corpus contract and tests](ICL.md).
 - **`robo`** (`robo.py`, `tools.py`): measuring (`locate`, `segment`, `triangulate`, `project`), looking (`show`, `watch`, `second_look`), planning at zero steps (`reach`, `estimate`), and goals that each complete at most one small step (`pick`, `place`, `stroke`, `turn`, `move`, `look`, `home`, or one per arm together with `both`). A goal is planned before anything moves and refused at zero steps when it cannot be done. Its failure stops the cell unless the program handles it. Programs the model writes may chain goals freely.
 - **Measurement** (`objects.py`, `segmenter.py`, `cameras.py`): text- or point-prompted masks from SAM 3, turned into world geometry with the public camera calibration. Two cameras agreeing on a prism fix its height; pixels covered by the robot, drawn from its meshes, do not count against it.
 - **Motion** (`control.py`, `planning.py`, `kinematics.py`, `timing.py`, `monitor.py`): joint goals chosen by distance from the current posture inside the arm's real joint range, robot-only cuRobo paths, straight Cartesian lines by damped least squares, trapezoidal timing at set joint speeds below the drive's limits, and joint tracking as the only contact feedback.
@@ -78,6 +79,9 @@ Supported: `bench_name=RoboDojo`, `env_cfg_type=arx_x5`, `action_type=joint`, `e
 | `keepalive_s` | Maximum wait for a native action before returning one hold action (90 seconds, below the standard evaluator's 120-second RPC deadline) |
 | `segmenter_checkpoint` | SAM 3 checkpoint file, with the path and environment override described above |
 | `policy_service` | Optional learned-policy WebSocket endpoint; null by default |
+| `icl_config`, `icl_python` | External ICL Engine TOML and optional worker Python; `R2SI_ICL_CONFIG` / `R2SI_ICL_PYTHON` override them; no config reports an explicitly disabled reference |
+| `icl_timeout_s` | Retrieval/compilation deadline, 180 seconds by default; configured failures abort instead of silently dropping ICL |
+| `icl_max_images`, `icl_max_text_chars` | Caps for the entire frozen prefix (64 images / 32000 text characters); exceeding them is an error |
 
 `R2SI_TRACE_DIR` enables local diagnostics. `R2SI_SESSION_RELEASE_PATH` is an optional model-service session cleanup endpoint. Neither is a policy decision input. Every hold action consumes a native step; the model's longer timeout does not relax the evaluator deadline.
 

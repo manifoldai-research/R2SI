@@ -1,0 +1,17 @@
+# Copy outside the repository and replace these paths with your declared demonstration corpus.
+schema_version = 1
+[paths]
+catalog = "/data/icl/catalog.jsonl"
+packages = "/data/icl/cache/packages"
+contexts = "/data/icl/cache/contexts"
+[retrieval]
+backend = "http"
+endpoint = "http://127.0.0.1:8090"
+# Local neural alternative: replace backend/endpoint with the engine's v5/v6/v7 settings.
+# lexical is available for CPU plumbing checks only, not validated neural retrieval.
+[compiler]
+recipe = "s1"
+image_budget = 16
+[context]
+max_demo_images = 64
+max_demo_text_chars = 32000
