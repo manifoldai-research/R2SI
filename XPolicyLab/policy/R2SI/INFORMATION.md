@@ -13,7 +13,13 @@ Everything the running policy reads, where it comes from and what it is used for
 | Action count and step limit | `deploy.py` copies `take_action_cnt` and `step_lim`; the limit differs from one job to another | Step budget shown to the model; refusing motions that cannot finish |
 | Results of the agent's own actions | Joint state after each action | Arrival, blocked, interrupted |
 
-Not read: depth, object poses, object models, simulator state, contact sensors, success flags, reward or score values, task name, layout files or indices, scene files, seed, anything from an earlier episode. `model.py` inherits the template's empty `prepare_case`, so case metadata does not arrive, and it keeps only the keys of `deploy.yml` listed below.
+Not read from the evaluator: depth, object poses, object models, simulator state, contact sensors, success flags, reward or score values, task name, layout files or indices, scene files, seed, anything from an earlier live episode. `model.py` inherits the template's empty `prepare_case`, so case metadata does not arrive. Deployment inputs are restricted to its explicit allowlist and the ICL settings in `configured_retriever`.
+
+## External demonstration reference
+
+When `R2SI_ICL_CONFIG` or `icl_config` is set, ICL Engine reads an explicitly configured external demonstration catalog and selected source episode. This is an additional policy input, separate from evaluator observations. Retrieval uses only the public instruction and first available RGB head-camera view (falling back to another camera); no case metadata or trial outcome is supplied. The configured backend may send that query to its HTTP endpoint. Source captions, sampled images and recipe-specific source annotations enter the planning model as a frozen reference, not executable actions. The corpus and its task overlap must be disclosed in evaluation. See [ICL.md](ICL.md) for setup, source formats and the boundary between demonstrations and current-scene execution.
+
+`robo.reference()` exposes the selection identity, retrieval method/status, recipe and integrity hashes. The entire compiled prefix is retained on every planning request, independently of live-image pruning. Its selected reference is discarded with the episode; verified on-disk packages may be reused. `R2SI_ICL_PYTHON` / `icl_python` select the external worker environment. `icl_timeout_s`, `icl_max_images` and `icl_max_text_chars` bound retrieval and context size. No config means an explicitly disabled tool; a configured retrieval failure aborts the episode.
 
 ## Public robot and camera files
 
@@ -52,7 +58,7 @@ The root of these public files is configured by `ROBODOJO_ROOT`, falling back to
 | Model | Input | Weights and code | Time |
 | --- | --- | --- | --- |
 | SAM 3 (weights `facebook/sam3`, code `RLinf/sam3` at the commit in `requirements.txt`) | One RGB image from above, a phrase or a pixel chosen by the agent | Public | About 15 ms per image and 60 ms per phrase on the policy GPU; counts toward the evaluator's request limit |
-| The planning model (`deploy.yml`) | System prompt (constant text), the observations and tool results above. Of the images, only the first views and those of the latest messages stay in the conversation | Hosted service | Counts toward the evaluator's request limit; the keepalive holds cost native steps |
+| The planning model (`deploy.yml`) | System prompt (constant text), the observations and tool results above, and the configured external ICL prefix. Live images retain only the first views and latest messages; all compiled demonstration images remain | Hosted service | Counts toward the evaluator's request limit; the keepalive holds cost native steps |
 | The same model, one request outside the conversation (`robo.second_look`) | Constant text (`prompt.SECOND_LOOK`), the instruction, the three current camera images, and a question the planning model wrote | Hosted service | As above, one short request each time the planning model asks |
 | The learned policy (`robo.policy`, service address `policy_service` in `deploy.yml`) | At each native step of a call: the three RGB images, both arms' joint state and gripper reading, and one sentence, the instruction or one the planning model wrote (`wam.frame`). No action count, step limit, pose or anything else; session identifiers are random. Without an address a call fails with an error. The service's configuration hash is read once for the run's metrics and takes no part in decisions | Public: weights `manifoldai-research/WorldScape-R2SI`, post-trained on RoboDojo demonstrations by their authors, and the service code in `XPolicyLab/policy/WorldScape_RSI/robodojo_server` | About 1.3 s per chunk of 24 steps and 30 ms per step over the network; counts toward the time limit |
 
@@ -70,7 +76,7 @@ The section "How work is scored" states how the benchmark usually judges work: e
 
 ## Measurements kept during an episode
 
-`scene.py` keeps one box per object from the agent's own `robo.locate` results (RGB masks and public camera geometry) and from where its own hand put a load down. Free motions use them to pass over objects. Nothing is kept between episodes.
+`scene.py` keeps one box per object from the agent's own `robo.locate` results (RGB masks and public camera geometry) and from where its own hand put a load down. Free motions use them to pass over objects. Live scene measurements and conversation state are not kept between episodes. The external demonstration package cache described above is separate.
 
 ## How an episode ends
 

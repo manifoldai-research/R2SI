@@ -1,5 +1,5 @@
 """The agent-thread side of `robo`: what each method does. Nothing here reads anything but the current official observation, the
-public robot and camera files and the results of this episode's own actions."""
+public robot and camera files, the configured frozen ICL reference and the results of this episode's own actions."""
 from __future__ import annotations
 
 import inspect
@@ -88,6 +88,7 @@ class Tools:
         self.segmenter = segmenter
         self.runner = actions.Runner(ctl)
         self.ask_fresh = None       # (observation, question) -> an answer that knows nothing of this episode's conversation
+        self.reference_info = lambda: {"status": "disabled"}
         self.attachments = []       # message parts for the next model message
         self.calls = []             # what this cell's robo calls did, for its summary
         self.instances = {}         # id -> (camera, Instance) of the latest segment and locate results
@@ -155,6 +156,9 @@ class Tools:
         observation = self.observation
         return {"arms": {arm: self.arm_state(observation, arm) for arm in ARMS}, "steps_used": observation.step, "step_limit": observation.step_limit,
                 "steps_left": observation.remaining, "home_steps": self.home_steps(observation)}
+
+    def do_reference(self):
+        return self.reference_info()
 
     def do_image(self, camera="cam_head"):
         return self._image(camera).copy()

@@ -16,6 +16,7 @@ from .client import ModelClient
 from .control import Controller
 from .segmenter import Segmenter
 from .tools import Tools
+from .icl import configured_retriever
 
 
 class Model(ModelTemplate):
@@ -23,7 +24,7 @@ class Model(ModelTemplate):
         super().__init__()
         if model_cfg.get("eval_batch"):
             raise ValueError("R2SI supports one environment per policy process; set eval_batch: false")
-        # Only these keys of the deployment configuration enter the policy; whatever else the launcher passes does not.
+        # Only these keys and the explicit ICL settings in configured_retriever enter the policy.
         self.cfg = {key: model_cfg.get(key) for key in ("bench_name", "env_cfg_type", "action_type", "model", "effort", "request_timeout_s", "keepalive_s", "segmenter_checkpoint", "policy_service")}
         for key, expected in (("bench_name", "RoboDojo"), ("env_cfg_type", "arx_x5"), ("action_type", "joint")):
             if self.cfg.get(key) != expected:
@@ -38,6 +39,7 @@ class Model(ModelTemplate):
         if not checkpoint.is_file():
             raise FileNotFoundError("Set R2SI_SEGMENTER_CHECKPOINT to the downloaded sam3.pt file: " + str(checkpoint))
         self.cfg["segmenter_checkpoint"] = str(checkpoint)
+        self.retriever = configured_retriever(model_cfg)
         self.spec = robot.load_spec()
         self.arm_model = kinematics.ArmModel()
         self.shape = kinematics.RobotShape(self.arm_model)
@@ -57,7 +59,7 @@ class Model(ModelTemplate):
             controller = Controller(self.spec, self.arm_model, self.planner, bridge, self.rig.head_stand())
             tools = Tools(controller, self.rig, self.shape, self.segmenter, self.cfg["policy_service"])
             client = ModelClient(model=self.cfg["model"], effort=self.cfg["effort"], timeout_s=float(self.cfg["request_timeout_s"]), trace_dir=self.trace_dir)
-            agent = Agent(client, tools, bridge)
+            agent = Agent(client, tools, bridge, retriever=self.retriever)
             thread = threading.Thread(target=agent.run, name="agent", daemon=True)
             self._episode = {"bridge": bridge, "controller": controller, "tools": tools, "client": client, "agent": agent, "thread": thread}
             thread.start()
@@ -104,6 +106,7 @@ class Model(ModelTemplate):
         if observation is None or (episode is self._episode and observation.step % 25):
             return
         row = {"steps": observation.step, "step_lim": observation.step_limit, "decisions": agent.decisions, "cells": agent.cells, "keepalive_holds": bridge.keepalive_holds,
+               "icl_reference": agent.reference.info(),
                "interruptions": bridge.interruptions, "contact_stops": bridge.contact_stops, **episode["controller"].counters, **episode["tools"].counters}
         path = Path(self.trace_dir) / ("metrics-" + episode["client"].session_id + ".json")
         temporary = path.with_suffix(".tmp")

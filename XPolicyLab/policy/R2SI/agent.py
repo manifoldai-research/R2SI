@@ -12,6 +12,7 @@ from . import observe, prompt, sandbox
 from .bridge import CAMERAS, EpisodeOver
 from .client import InfrastructureFailure
 from .robo import Robo
+from .icl import Reference
 from .tools import Failed
 
 CELL_TIME_LIMIT_S = 60.0
@@ -29,10 +30,13 @@ PYTHON_TOOL = {"type": "function", "name": "python",
 
 
 class Agent:
-    def __init__(self, client, tools, bridge):
+    def __init__(self, client, tools, bridge, retriever=None):
         self.client = client
         self.tools = tools
         self.bridge = bridge
+        self.retriever = retriever
+        self.reference = Reference()
+        tools.reference_info = lambda: self.reference.info()
         self.items = []
         self.images_dropped = 0    # how many image messages after the first have lost their images
         self.decisions = 0
@@ -61,7 +65,7 @@ class Agent:
             self.images_dropped += IMAGE_MESSAGES_DROPPED
             self.client.new_cache_key()
         gone = set(rows[1:1 + self.images_dropped])
-        return [{**item, "content": [{"type": "input_text", "text": IMAGE_GONE} if part.get("type") == "input_image" else part for part in item["content"]]} if index in gone else item
+        return self.reference.messages() + [{**item, "content": [{"type": "input_text", "text": IMAGE_GONE} if part.get("type") == "input_image" else part for part in item["content"]]} if index in gone else item
                 for index, item in enumerate(self.items)]
 
     def _ask_fresh(self, observation, question) -> str:
@@ -138,6 +142,10 @@ class Agent:
     def _loop(self):
         observation = self.bridge.wait_observation()
         self.tools.ctl.begin(observation)
+        if self.retriever is not None:
+            self.reference = self.retriever.prepare(observation, self.client.ended)
+            self.client._log("icl_reference_ready", **self.reference.info())
+            observation = self.bridge.current()
         instructions = prompt.system_prompt()
         self._user([{"type": "text", "text": "Instruction: " + observation.instruction + "\n\nRobot now:\n" + json.dumps(self._status(observation))},
                     *self._camera_parts(observation)])

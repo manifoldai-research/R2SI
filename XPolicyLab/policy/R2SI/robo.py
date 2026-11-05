@@ -19,6 +19,14 @@ class Robo:
         return self._channel.call(method, arguments)
 
     # -- reading the robot ------------------------------------------------------------------------
+    def reference(self):
+        """Inspect the core ICL-RAG reference selected automatically before the first decision. Returns status (ready or
+        disabled), source/episode identity, recipe, image count, retrieval method and integrity hashes. When ready, the full
+        frozen demonstration is already present before the live conversation on EVERY decision. Use it to understand a
+        possible strategy, then measure your own scene. Source coordinates and candidate actions are not robot commands.
+        The selection stays fixed for this episode; this call does not retrieve again or move the robot."""
+        return self._send("reference")
+
     def state(self):
         """Current robot state and step counters: {"arms": {arm: {"position", "quaternion_wxyz", "opening", "width_m", "joints"}},
         "steps_used", "step_limit", "steps_left", "home_steps"}. opening is the official gripper reading; while closed on something
