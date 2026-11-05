@@ -1,0 +1,13 @@
+# Separate Linux Python 3.10+ worker; install CUDA torch/torchvision first.
+# Also install the full editable ICL Engine checkout pinned in ICL.md.
+transformers==4.57.6
+qwen-vl-utils==0.0.14
+accelerate==1.12.0
+numpy==2.2.6
+Pillow==12.3.0
+h5py==3.16.0
+av==17.1.0
+opencv-python-headless==5.0.0.93
+PyYAML==6.0.3
+tomli==2.5.0
+# Tests only need these additional packages: pytest, pyarrow.
