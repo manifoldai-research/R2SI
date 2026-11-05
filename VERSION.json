@@ -1,7 +1,7 @@
 {
   "distribution": "WorldScape_RSI",
   "distribution_version": "20261024-v4",
-  "harness_release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+  "harness_release_sha256": "9b5fffe6866a336e9ae56ece7d0d1a7d31b9a6c8d54a7be7542d9a387ec19c72",
   "official_policy_path": "XPolicyLab/policy/WorldScape_RSI",
   "project_website": "https://r2si.worldscape.io"
 }

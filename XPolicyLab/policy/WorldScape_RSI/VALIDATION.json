@@ -1,90 +1,48 @@
 {
   "schema": "r2si.trial-state-remediation.v1",
-  "validated_at_utc": "2026-10-24T09:30:48.025762+00:00",
-  "release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+  "validated_at_utc": "2026-11-05T11:16:23.113835+00:00",
+  "release_sha256": "9b5fffe6866a336e9ae56ece7d0d1a7d31b9a6c8d54a7be7542d9a387ec19c72",
   "official_baseline_commit": "7074afbcb2223caf21dcee9a803f1025b2c8c76b",
   "official_single_entry_eligible": false,
   "eligibility_status": "current_simulator_and_clean_environment_reproduction_not_completed",
   "current_release_checks": {
-    "release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+    "status": "cpu_regression_passed_online_validation_not_run",
+    "release_sha256": "9b5fffe6866a336e9ae56ece7d0d1a7d31b9a6c8d54a7be7542d9a387ec19c72",
+    "validated_at_utc": "2026-11-05T11:16:23.113835+00:00",
     "cpu_regression": {
+      "passed": 273,
+      "subtests_passed": 96,
+      "warnings": 1,
       "exit_code": 0,
-      "elapsed_seconds": 163.40604066476226,
-      "release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
-      "command": [
-        "python",
-        "-B",
-        "-m",
-        "pytest",
-        "-p",
-        "no:cacheprovider",
-        "XPolicyLab/policy/WorldScape_RSI/harness/tests",
-        "tests",
-        "-q"
-      ],
+      "elapsed_seconds": 51.29,
+      "command": "PYTHONDONTWRITEBYTECODE=1 R2SI_TEST_XPL_ROOT=\"$PWD/XPolicyLab\" python -m pytest -p no:cacheprovider -q tests XPolicyLab/policy/WorldScape_RSI/harness/tests --tb=short",
+      "python_version": "3.12",
+      "dependencies": "CPU-only dependencies installed in an isolated target directory; repository root and worldscape-policy/src on PYTHONPATH",
       "real_robot_or_gpu": false,
-      "passed": 256,
-      "subtests_passed": 87,
       "caller_pythonpath_includes_tests": false
     },
-    "lifecycle_regression": {
-      "added_cases": 16,
-      "before_release": "eb98e3ed498912133564b0ecd13f1f3e70f7d64979f90f3e867895c0d12a2cae",
-      "before_failed": 13,
-      "before_passed": 3,
-      "after_release": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
-      "after_passed": 16,
-      "combined_startup_protocol_passed": 28,
-      "real_local_websocket_cases": 3,
-      "model": "CPU fault-injection fixture",
-      "gpu_model_inference": false,
-      "native_robot_actions": 0,
-      "scenarios": [
-        "cleanup fails before first action; stale reset refused",
-        "cleanup retry recovery with new trial only",
-        "INFER success/update failure/action failure/missing observation",
-        "INFER before reset and cross-trial admission",
-        "read-only metadata preserves initial duplicate reset",
-        "concurrent RESET waits for INFER or cleanup; heartbeat remains available",
-        "official WS client INFER success/failure and cleanup failure"
-      ]
+    "candidate_regression": {
+      "new_tests": 12,
+      "new_subtests": 9,
+      "planner": "CPU fixtures with real native motion builder and tool dispatcher"
     },
-    "source_scope": {
-      "source_release": "eb98e3ed498912133564b0ecd13f1f3e70f7d64979f90f3e867895c0d12a2cae",
-      "final_release": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
-      "changed": [
-        "XPolicyLab/policy/WorldScape_RSI/MANIFEST.json",
-        "XPolicyLab/policy/WorldScape_RSI/VALIDATION.json",
-        "XPolicyLab/policy/WorldScape_RSI/harness/release.json",
-        "XPolicyLab/policy/WorldScape_RSI/harness/server.py"
-      ],
-      "added": [
-        "XPolicyLab/policy/WorldScape_RSI/validation/release-history/eb98e3ed498912133564b0ecd13f1f3e70f7d64979f90f3e867895c0d12a2cae.json",
-        "tests/test_trial_lifecycle.py",
-        "docs/TRIAL_STATE_FIXES_20261024.md"
-      ],
-      "removed": [],
-      "production_python_changes": [
-        "XPolicyLab/policy/WorldScape_RSI/harness/server.py"
-      ],
-      "model_prediction_weights_configuration_and_skills_unchanged": true,
-      "other_policy_files_unchanged": 1039,
-      "existing_services_restarted": false,
-      "historical_agent_and_gpu_records_not_relabelled": true
-    },
-    "official_pr_scope": {
-      "official_commit": "7074afbcb2223caf21dcee9a803f1025b2c8c76b",
-      "equal_shared_files": 341,
-      "changed_shared_files": [],
-      "additional_shared_files": [],
-      "official_submission_root": "policy/WorldScape_RSI",
-      "engineering_workspace_is_partial_official_checkout": true
+    "static_checks": {
+      "release_hash_verification": "passed",
+      "shell_syntax_scripts": 9,
+      "python_syntax_files": 4,
+      "deploy_required_keys": 10,
+      "git_diff_check": "passed"
     },
     "model_prediction_and_weights_changed": false,
-    "real_agent_debug_rerun": false,
     "gpu_model_inference_rerun": false,
     "robot_task_execution_rerun": false,
-    "existing_services_restarted": false
+    "real_agent_debug_rerun": false,
+    "existing_services_restarted": false,
+    "limitations": [
+      "No CUDA planner, debug closed-loop, simulator, physical tracking or benchmark validation for this release.",
+      "Contact admissibility is supplied by the Agent and is not certified by the selector.",
+      "No task-success or wall-clock improvement is claimed."
+    ]
   },
   "historical_audits": [
     {
@@ -648,5 +606,92 @@
   ],
   "old_records_relabelled": false,
   "github_pr_updated": false,
-  "monitoring_started": false
+  "monitoring_started": false,
+  "superseded_checks": [
+    {
+      "release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+      "checks": {
+        "release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+        "cpu_regression": {
+          "exit_code": 0,
+          "elapsed_seconds": 163.40604066476226,
+          "release_sha256": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+          "command": [
+            "python",
+            "-B",
+            "-m",
+            "pytest",
+            "-p",
+            "no:cacheprovider",
+            "XPolicyLab/policy/WorldScape_RSI/harness/tests",
+            "tests",
+            "-q"
+          ],
+          "real_robot_or_gpu": false,
+          "passed": 256,
+          "subtests_passed": 87,
+          "caller_pythonpath_includes_tests": false
+        },
+        "lifecycle_regression": {
+          "added_cases": 16,
+          "before_release": "eb98e3ed498912133564b0ecd13f1f3e70f7d64979f90f3e867895c0d12a2cae",
+          "before_failed": 13,
+          "before_passed": 3,
+          "after_release": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+          "after_passed": 16,
+          "combined_startup_protocol_passed": 28,
+          "real_local_websocket_cases": 3,
+          "model": "CPU fault-injection fixture",
+          "gpu_model_inference": false,
+          "native_robot_actions": 0,
+          "scenarios": [
+            "cleanup fails before first action; stale reset refused",
+            "cleanup retry recovery with new trial only",
+            "INFER success/update failure/action failure/missing observation",
+            "INFER before reset and cross-trial admission",
+            "read-only metadata preserves initial duplicate reset",
+            "concurrent RESET waits for INFER or cleanup; heartbeat remains available",
+            "official WS client INFER success/failure and cleanup failure"
+          ]
+        },
+        "source_scope": {
+          "source_release": "eb98e3ed498912133564b0ecd13f1f3e70f7d64979f90f3e867895c0d12a2cae",
+          "final_release": "f8b4924c606493bd28e50e0beca9cb64c42db92c819662d44d12ebe6b3d99926",
+          "changed": [
+            "XPolicyLab/policy/WorldScape_RSI/MANIFEST.json",
+            "XPolicyLab/policy/WorldScape_RSI/VALIDATION.json",
+            "XPolicyLab/policy/WorldScape_RSI/harness/release.json",
+            "XPolicyLab/policy/WorldScape_RSI/harness/server.py"
+          ],
+          "added": [
+            "XPolicyLab/policy/WorldScape_RSI/validation/release-history/eb98e3ed498912133564b0ecd13f1f3e70f7d64979f90f3e867895c0d12a2cae.json",
+            "tests/test_trial_lifecycle.py",
+            "docs/TRIAL_STATE_FIXES_20261024.md"
+          ],
+          "removed": [],
+          "production_python_changes": [
+            "XPolicyLab/policy/WorldScape_RSI/harness/server.py"
+          ],
+          "model_prediction_weights_configuration_and_skills_unchanged": true,
+          "other_policy_files_unchanged": 1039,
+          "existing_services_restarted": false,
+          "historical_agent_and_gpu_records_not_relabelled": true
+        },
+        "official_pr_scope": {
+          "official_commit": "7074afbcb2223caf21dcee9a803f1025b2c8c76b",
+          "equal_shared_files": 341,
+          "changed_shared_files": [],
+          "additional_shared_files": [],
+          "official_submission_root": "policy/WorldScape_RSI",
+          "engineering_workspace_is_partial_official_checkout": true
+        },
+        "model_prediction_and_weights_changed": false,
+        "real_agent_debug_rerun": false,
+        "gpu_model_inference_rerun": false,
+        "robot_task_execution_rerun": false,
+        "existing_services_restarted": false
+      },
+      "reason": "Source/documentation changed; earlier checks remain historical"
+    }
+  ]
 }
