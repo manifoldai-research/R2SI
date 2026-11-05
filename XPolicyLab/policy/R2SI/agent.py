@@ -82,7 +82,7 @@ class Agent:
     def _status(self, observation) -> dict:
         tools = self.tools
         row = {"arms": {arm: {key: value for key, value in tools.arm_state(observation, arm).items() if key != "joints"} for arm in ("left", "right")},
-               "steps_used": observation.step, "step_limit": observation.step_limit, "steps_left": observation.remaining, "home_steps": tools.home_steps(observation)}
+               "steps_used": observation.step, "home_steps": tools.home_steps(observation)}
         holds = self.bridge.keepalive_unreported
         if holds:
             row["hold_steps_while_deciding"] = holds

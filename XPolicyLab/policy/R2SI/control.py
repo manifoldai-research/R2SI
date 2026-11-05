@@ -1,7 +1,7 @@
 """Planning and timing of native arm motions, from official robot state and the robot-only planner.
 
 A motion is planned before anything moves and is refused at zero steps when it cannot be done: no joint solution inside the arm's real range,
-no joint path, a joint detour, the two arms too close, the arm into the table, or not enough steps left. Free motions take the joint path the
+no joint path, a joint detour, the two arms too close, or the arm into the table. Free motions take the joint path the
 planner finds, and go up and over an object the agent has measured when that path would run into it; straight motions follow a
 Cartesian line hop by hop, so the grasp point stays on the line and a line that would make the arm swing is refused.
 """

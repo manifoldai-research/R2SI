@@ -43,6 +43,7 @@ VIEW_ROLLS_DEG = (0, 90, 180, 270)              # ... with the camera turned any
 VIEW_NEAR_DEG = ((0, 0), (15, 0), (-15, 0), (0, 25), (0, -25), (15, 25), (15, -25))   # a view asked from one side may differ this much in height and around
 AT_PIXEL = "object at pixel"  # the text of what robo.locate_at finds: no phrase that could find it again
 POLICY_MAX_CHUNKS = 8         # one call hands the arms to the learned policy for at most this many chunks; then the model looks again
+WAIT_CHUNK_STEPS = 128       # bound queued holds even when a cell requests a very long wait
 
 
 class Failed(Exception):
@@ -125,7 +126,6 @@ class Tools:
         if isinstance(result, dict) and "ok" in result:
             result = _plain(result)
             result["steps"] = steps
-            result["steps_left"] = self.observation.remaining
             self.calls.append({"call": method, "ok": result["ok"], "steps": steps, **({"failure": result["failure"]} if result.get("failure") else {})})
             if not result["ok"]:
                 self.counters["goal_failures"] += 1
@@ -154,8 +154,8 @@ class Tools:
 
     def do_state(self):
         observation = self.observation
-        return {"arms": {arm: self.arm_state(observation, arm) for arm in ARMS}, "steps_used": observation.step, "step_limit": observation.step_limit,
-                "steps_left": observation.remaining, "home_steps": self.home_steps(observation)}
+        return {"arms": {arm: self.arm_state(observation, arm) for arm in ARMS}, "steps_used": observation.step,
+                "home_steps": self.home_steps(observation)}
 
     def do_reference(self):
         return self.reference_info()
@@ -503,8 +503,7 @@ class Tools:
                 raise ValueError("each segment needs op move, line, grip, home or wait")
             total += row.get("steps", 0)
             rows.append(row)
-        left = observation.remaining
-        return {"ok": complete, "segments": rows, "total_steps": total, "steps_left": left, "fits": bool(complete and total <= left)}
+        return {"ok": complete, "segments": rows, "total_steps": total}
 
     def do_hold_point(self, arm, name="tip", point=None, views=None):
         if arm not in ARMS:
@@ -893,8 +892,6 @@ class Tools:
             raise ValueError(f"chunks must be an integer from 1 to {POLICY_MAX_CHUNKS}")
         self.counters["policy_calls"] += 1
         observation = self.observation
-        if observation.remaining <= 0:
-            return {"ok": False, "failure": "no_steps", "moved": False, "reason": "no native steps are left"}
         sentence = observation.instruction if text is None else text.strip()
         if self.policy is not None and (self.policy_step != observation.step or self.policy_text != sentence):
             self.end_policy()
@@ -927,9 +924,6 @@ class Tools:
             for _ in range(chunks):
                 for action in session.chunk():
                     observation = self.observation
-                    if observation.remaining <= 0:
-                        stopped = "no native steps are left"
-                        break
                     native = {key: np.asarray(action[key], dtype=np.float32).reshape(-1).copy() for key in wam.STATE_KEYS}
                     for arm in ARMS:
                         native[arm + "_ee_joint_state"] = np.clip(native[arm + "_ee_joint_state"], 0.0, 1.0)
@@ -986,9 +980,11 @@ class Tools:
     def do_wait(self, steps=1):
         if type(steps) is not int or steps < 1:
             raise ValueError("steps must be a positive integer")
-        observation = self.observation
-        count = min(steps, max(observation.remaining, 1))
-        self.bridge.execute([self.bridge.hold_action(observation)] * count)
+        while steps:
+            observation = self.observation
+            count = min(steps, WAIT_CHUNK_STEPS)
+            self.bridge.execute([self.bridge.hold_action(observation)] * count)
+            steps -= count
         return {"ok": True}
 
 

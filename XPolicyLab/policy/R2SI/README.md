@@ -68,7 +68,7 @@ bash XPolicyLab/policy/R2SI/eval.sh RoboDojo stack_bowls default arx_x5 joint 0 
 
 Supported: `bench_name=RoboDojo`, `env_cfg_type=arx_x5`, `action_type=joint`, `eval_batch=false`. Run one policy process per environment; batch mode is rejected before loading models. Shared protocol conventions are in the [XPolicyLab README](../../README.md).
 
-`deploy.py` adds only the official action counter and step limit to observation metadata. The normal evaluator controls episode termination. This adapter does not change the shared WebSocket client or evaluation rules, and is not wired into the outer RSI improvement loop.
+`deploy.py` forwards the standard observations without adding environment counters or a task step limit. The Agent counts only its own actions acknowledged by subsequent observations, including keepalive holds; extra observation metadata is ignored. The evaluator controls episode termination. The Agent can estimate motion cost but cannot report remaining steps or reject a motion based on the evaluator's unknown allowance. This adapter does not change the shared WebSocket client or evaluation rules, and is not wired into the outer RSI improvement loop.
 
 ## Configuration
 

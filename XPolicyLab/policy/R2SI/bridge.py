@@ -22,17 +22,12 @@ class EpisodeOver(BaseException):
 
 @dataclass(frozen=True)
 class Observation:
-    """What the policy may read: official RGB, robot state, the instruction and the official step counters."""
+    """Official RGB, robot state and instruction, plus locally acknowledged actions."""
 
     images: dict
     state: dict
     instruction: str
     step: int
-    step_limit: int
-
-    @property
-    def remaining(self) -> int:
-        return max(0, self.step_limit - self.step)
 
 
 CAMERAS = ("cam_head", "cam_left_wrist", "cam_right_wrist")
@@ -40,7 +35,7 @@ STATE_SIZES = {"left_arm_joint_state": 6, "right_arm_joint_state": 6, "left_ee_j
                "left_ee_pose": 7, "right_ee_pose": 7}
 
 
-def parse_observation(raw: dict) -> Observation:
+def parse_observation(raw: dict, *, step: int = 0) -> Observation:
     """The whitelist of what enters the policy from an evaluator observation; everything else is dropped here."""
     if not isinstance(raw, dict) or not isinstance(raw.get("state"), dict):
         raise ValueError("expected an official observation dictionary")
@@ -64,10 +59,8 @@ def parse_observation(raw: dict) -> Observation:
             images[camera] = array.copy()
     if not images:
         raise ValueError("at least one RGB view is required")
-    info = raw.get("additional_info")
-    if not isinstance(info, dict) or type(info.get("step")) is not int or type(info.get("step_lim")) is not int:
-        raise ValueError("the action count and step limit are missing: run through this policy's deploy.py")
-    return Observation(images=images, state=state, instruction=instruction.strip(), step=info["step"], step_limit=info["step_lim"])
+    # Metadata is not a decision input. The bridge supplies its own action count.
+    return Observation(images=images, state=state, instruction=instruction.strip(), step=step)
 
 
 @dataclass
@@ -89,6 +82,7 @@ class Bridge:
         self._contact = False          # the running chunk expects to be stopped by contact
         self._pending = None           # the action sent, not yet acknowledged
         self._pending_internal = False
+        self._acknowledged_steps = 0
         self.observation = None
         self.grippers = {}             # latched gripper commands: re-sending a reading would relax a grip
         self._closed = False
@@ -103,7 +97,8 @@ class Bridge:
         with self._cv:
             executed = self._pending is not None
             previous = self.observation
-            observation = parse_observation(raw)
+            observation = parse_observation(raw, step=self._acknowledged_steps + int(executed))
+            self._acknowledged_steps = observation.step
             self.observation = observation
             if executed:
                 action, internal, self._pending, self._pending_internal = self._pending, self._pending_internal, None, False

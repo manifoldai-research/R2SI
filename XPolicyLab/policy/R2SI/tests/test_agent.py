@@ -19,12 +19,13 @@ def last_value(client):
     return outputs(client)[-1].get("value")
 
 
-def test_state_and_budget():
-    client, env, _ = run_episode(["s = robo.state()\nprint(s['steps_left'], s['step_limit'], s['home_steps'])\ns['arms']['left']['opening']"], step_limit=321)
-    out = outputs(client)[0]
-    assert out["status"] == "complete", out
-    assert out["stdout"].split()[:2] == ["321", "321"]
-    assert env.step == 0
+def test_state_reports_local_actions_without_an_episode_budget():
+    client, env, _ = run_episode(["robo.state()", "robo.wait(3)", "robo.state()"], step_limit=321)
+    before, after = outputs(client)[0]["value"], outputs(client)[2]["value"]
+    assert set(before) == {"arms", "steps_used", "home_steps"}
+    assert before["steps_used"] == 0 and after["steps_used"] == env.step == 3
+    for output in outputs(client):
+        assert "steps_left" not in json.dumps(output) and "step_limit" not in json.dumps(output)
 
 
 def test_move_and_arrival():
@@ -187,25 +188,26 @@ s = robo.state()
 l = s['arms']['left']['position']
 print(len(robo.reach([[l[0], l[1] + 0.15, l[2] - 0.02]], arm='left')['points'][0]['left']) > 0)
 e = robo.estimate([{'op': 'move', 'arm': 'left', 'position': [l[0], l[1] + 0.15, l[2] - 0.02]}, {'op': 'grip', 'arm': 'left', 'opening': 0.0}, {'op': 'wait', 'steps': 3}])
-print(e['ok'], e['total_steps'] > 3, e['fits'])
+print(e['ok'], e['total_steps'] > 3)
+print('fits' not in e and 'steps_left' not in e)
 """
     client, env, _ = run_episode([code])
     out = outputs(client)[0]
     assert out["status"] == "complete", out
-    assert env.step == 0 and "True" in out["stdout"] and "True True True" in out["stdout"], out
+    assert env.step == 0 and "True True" in out["stdout"] and out["stdout"].strip().endswith("True"), out
 
 
-def test_budget_refuses_a_motion_that_cannot_finish():
+def test_evaluator_can_end_a_native_motion_without_publishing_its_limit():
     code = """
 s = robo.state()
 p = s['arms']['left']['position']
 r = robo.move('left', [p[0] + 0.2, p[1] + 0.2, p[2] - 0.1], check=False)
 print(r['ok'], r.get('failure'), r['steps'])
 """
-    client, env, _ = run_episode([code], step_limit=3)
-    out = outputs(client)[0]
-    assert "False budget 0" in out["stdout"], out
-    assert env.step == 0
+    client, env, tools = run_episode([code], step_limit=3)
+    assert env.step == 3 and client.turn == 1
+    assert not outputs(client), "An unfinished cell must not report successful completion"
+    assert tools.bridge._closed and not tools.bridge._queue
 
 
 def test_interruption_is_reported_and_keeps_the_grip_command():
@@ -888,11 +890,13 @@ def test_only_public_observation_enters():
                "additional_info": {"step": 3, "step_lim": 9, "success": True, "task_name": "x", "seed": 2}, "task_name": "x", "success": True}
     obs = parse_observation(env_obs)
     assert set(obs.state) == {"left_arm_joint_state", "right_arm_joint_state", "left_ee_joint_state", "right_ee_joint_state", "left_ee_pose", "right_ee_pose"}
-    assert set(obs.images) == {"cam_head"} and obs.step == 3 and obs.step_limit == 9
-    assert not hasattr(obs, "extra")
+    assert set(obs.images) == {"cam_head"} and obs.step == 0
+    assert not hasattr(obs, "extra") and not hasattr(obs, "step_limit")
+    env_obs.pop("additional_info")
+    assert parse_observation(env_obs).step == 0
 
 
-FORBIDDEN_CODE = re.compile(r"\b(task_name|action_case_id|layout|seed_id|env_seed|get_obs|take_action_cnt|is_episode_end|success|reward|depth_image|distance_to_image_plane|object_pose)\b")
+FORBIDDEN_CODE = re.compile(r"\b(task_name|action_case_id|layout|seed_id|env_seed|get_obs|take_action_cnt|step_lim|is_episode_end|success|reward|depth_image|distance_to_image_plane|object_pose)\b")
 
 
 def test_runtime_code_names_no_forbidden_source():
@@ -1012,12 +1016,12 @@ def test_the_policy_is_stopped_short_of_a_sudden_jump():
     assert env.step == 6 and len(opened) == 2 and opened[0].closed, "a chunk cut short ends the session"
 
 
-def test_the_policy_stops_when_no_steps_are_left():
+def test_evaluator_ends_wam_mid_chunk_and_closes_its_session():
     opened, policy = policy_sessions()
-    client, env, _ = run_episode(["r = robo.policy()\nprint(r['steps'], r['chunks'], r['stopped'])", "r = robo.policy(check=False)\nprint(r['ok'], r['failure'])"], policy=policy, step_limit=10)
-    assert env.step == 10
-    assert outputs(client)[0]["stdout"].startswith("10 0"), outputs(client)[0]
-    assert "False no_steps" in outputs(client)[1]["stdout"], outputs(client)[1]
+    client, env, tools = run_episode(["robo.policy()", "robo.policy()"], policy=policy, step_limit=10)
+    assert env.step == 10 and client.turn == 1 and not outputs(client)
+    assert len(opened) == 1 and opened[0].closed and tools.policy is None
+    assert tools.bridge._closed and not tools.bridge._queue
 
 
 def test_a_failing_policy_service_voids_the_trial():
