@@ -1,0 +1,23 @@
+policy_name: R2SI
+protocol: ws
+host: localhost
+port: null
+bench_name: RoboDojo
+task_name: null
+ckpt_name: null
+env_cfg_type: arx_x5
+seed: 0
+action_type: joint
+gpu_id: null
+eval_batch: false
+# The model that writes the code cells.
+model: gpt-6-astra
+effort: high
+# Seconds one model request may take.
+request_timeout_s: 900
+# Seconds one evaluator request waits for the agent before a single hold action is returned instead.
+keepalive_s: 90
+# Address of the learned policy's service (WebSocket), which serves the weights named in ../WorldScape_RSI/README.md. Null: robo.policy is refused.
+policy_service: null
+# SAM 3 weights (facebook/sam3).
+segmenter_checkpoint: checkpoints/sam3/sam3.pt
