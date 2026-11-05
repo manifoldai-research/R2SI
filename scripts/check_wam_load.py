@@ -19,8 +19,8 @@ def main():
     if os.environ.get('WRSI_POLICY_CLIENT_CONFIG'):
         parser.error('Unset WRSI_POLICY_CLIENT_CONFIG to test local weight loading')
     import torch
-    from XPolicyLab.policy.WorldScape_RSI.harness.release import FrozenRelease, ROOT
-    from XPolicyLab.policy.WorldScape_RSI.harness.wam import create_model
+    from XPolicyLab.policy.WorldScape_R2SI.harness.release import FrozenRelease, ROOT
+    from XPolicyLab.policy.WorldScape_R2SI.harness.wam import create_model
     release = FrozenRelease(ROOT / 'release.json')
     key = 'worldscape-wam-memory' if args.variant == 'memory' else 'worldscape-wam-nomemory'
     spec = release.data['wam_skills'][key]

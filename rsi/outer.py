@@ -10,7 +10,7 @@ from .experience import admit
 from .registry import Registry
 from .storage import canonical
 from .validation import compare
-from .reflection_context import context_tools, read_episode, read_artifact, editable_path, HARNESS, VENDOR
+from .reflection_context import context_tools, read_episode, read_artifact, editable_path, HARNESS, VENDOR, AGENT_FILES
 
 def reflection_tool(skills):
     string_list = {"type": "array", "items": {"type": "string"}}
@@ -72,7 +72,7 @@ class OuterLoop:
         catalog = {k: ({a: b for a, b in v.items() if a != 'text'} if isinstance(v, dict)
                        else {'preview': v[:180]}) for k, v in skills.items()}
         source = Path(source_root)/HARNESS if source_root else None
-        inventory = ([x.relative_to(source).as_posix() for x in (source/VENDOR).glob('*.py')]
+        inventory = ([name for name in sorted(AGENT_FILES) if (source.parent/name).is_file()]
                      + [x.relative_to(source).as_posix() for x in (source/'memory').glob('*.md')]) if source else []
         messages = [{"role": "system", "content": prompt}, {"role": "user", "content": json.dumps({
             "episodes": evidence, "skills": catalog, "editable_files": inventory,

@@ -55,7 +55,7 @@ class LocalRSI(unittest.TestCase):
     def test_general_memory_and_tool_change_enter_candidate(self):
         # Stub only heavyweight release freezing/checkpoint manifests; the real builder,
         # copied files, SkillLibrary and Memory loader execute below.
-        original=PROJECT/HARNESS/VENDOR/'tools.py'
+        original=(PROJECT/HARNESS).parent/'tools.py'
         content=original.read_text()+'\nLOCAL_RSI_TEST_SENTINEL = True\n'
         checkpoints={k:{'path':'/fixture','files':{'fixture':'0'*64}} for k in ('memory','flash')}
         manifest=build_release(self.ws,PROJECT,checkpoints,skill_updates=[
@@ -63,7 +63,7 @@ class LocalRSI(unittest.TestCase):
             dict(id='support-fit-local-test',scope='generic',task='',text='Verify centered support after contact.',
                  description='Support geometry',dependencies=['grasp-local-test'])],
             memory_updates=[dict(id='retain-contact',text='Remember whether support was observed.')],
-            code_updates=[dict(path=VENDOR+'/tools.py',content=content)])
+            code_updates=[dict(path='tools.py',content=content)])
         root=Path(manifest['root']);lib=load_library(root)
         # A single policy owns both implementations. Its WAM manifest must not
         # recursively include the Harness release that embeds that manifest.
@@ -72,10 +72,10 @@ class LocalRSI(unittest.TestCase):
             self.assertIn('wam_model.py',spec['source_files'])
             self.assertNotIn('harness/release.json',spec['source_files'])
             for name,expected in spec['source_files'].items():
-                self.assertEqual(sha256(root/'XPolicyLab/policy/WorldScape_RSI'/name),expected)
+                self.assertEqual(sha256(root/'XPolicyLab/policy/WorldScape_R2SI'/name),expected)
         self.assertEqual(lib.entries['support-fit-local-test']['scope'],'generic')
         self.assertIn('grasp-support-release',lib.entries)
-        self.assertIn('LOCAL_RSI_TEST_SENTINEL',(root/HARNESS/VENDOR/'tools.py').read_text())
+        self.assertIn('LOCAL_RSI_TEST_SENTINEL',((root/HARNESS).parent/'tools.py').read_text())
         self.assertEqual((root/HARNESS/'memory/retain-contact.md').read_text(),'Remember whether support was observed.')
         second=build_release(self.ws,root,checkpoints,skill_updates=[dict(id='next-round',text='Retain the earlier contact evidence.')])
         self.assertIn('support-fit-local-test',load_library(second['root']).entries)

@@ -1,4 +1,4 @@
-"""Export the inner Agent as one policy/WorldScape_RSI directory."""
+"""Export the inner Agent as one policy/WorldScape_R2SI directory."""
 import argparse
 import hashlib
 import importlib.util
@@ -6,7 +6,7 @@ from pathlib import Path
 import tarfile
 
 PROJECT = Path(__file__).resolve().parents[1]
-POLICY = PROJECT / "XPolicyLab/policy/WorldScape_RSI"
+POLICY = PROJECT / "XPolicyLab/policy/WorldScape_R2SI"
 
 
 def export(output, policy=POLICY):
@@ -28,7 +28,7 @@ def export(output, policy=POLICY):
         if path.is_symlink():
             raise ValueError("Policy export expects regular source files")
         if path.is_file():
-            files.append((path, "policy/WorldScape_RSI/" + relative.as_posix()))
+            files.append((path, "policy/WorldScape_R2SI/" + relative.as_posix()))
     output.parent.mkdir(parents=True, exist_ok=True)
     created = False
     try:

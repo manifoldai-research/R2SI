@@ -18,7 +18,7 @@ class WorkerVersions(unittest.TestCase):
             ids = []
             for version in ("before", "candidate"):
                 release = root / version
-                package = release / "XPolicyLab/policy/WorldScape_RSI"
+                package = release / "XPolicyLab/policy/WorldScape_R2SI"
                 package.mkdir(parents=True)
                 for parent in (release/"XPolicyLab", release/"XPolicyLab/policy", package):
                     (parent/"__init__.py").write_text("")

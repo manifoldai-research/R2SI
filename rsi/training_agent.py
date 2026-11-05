@@ -1,4 +1,4 @@
-"""Agent-requested bounded training through the native trainer, without shell tools."""
+"""Training proposal schemas reserved for a future WSP training backend."""
 from __future__ import annotations
 import math
 import json
@@ -56,7 +56,7 @@ class TrainingBudget:
 TRAINING_TOOL = {'type': 'function', 'function': {
     'name': 'propose_training',
     'description': 'Return a training-parameter proposal only; this inference bridge executes nothing. '
-                   'The authorized caller validates this proposal and may run a bounded training job on its reserved GPU. '
+                   'WSP training is currently unavailable: its reserved interface raises NotImplementedError. '
                    'The first operation is train; adjust changes the learning rate for a later job. '
                    'No running job or deployed model is modified.',
     'parameters': {'type': 'object', 'additionalProperties': False,

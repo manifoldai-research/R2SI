@@ -10,7 +10,7 @@ PROJECT = Path(__file__).resolve().parents[1]
 sys.path[:0] = [str(PROJECT), str(PROJECT / "XPolicyLab")]
 from rsi.storage import Workspace
 from rsi.worker import VersionedModel
-from XPolicyLab.policy.WorldScape_RSI.harness.server import SingleTrialServer, PolicyServerConfig, M
+from XPolicyLab.policy.WorldScape_R2SI.harness.server import SingleTrialServer, PolicyServerConfig, M
 
 
 class PersistentTrialServer(SingleTrialServer):
@@ -39,7 +39,7 @@ def main():
         p.error("Use an explicit unprivileged port")
     if args.mode == "official" and not args.campaign:
         p.error("Official mode requires a previously frozen campaign")
-    cfg = {"policy_name": "WorldScape_RSI", "bench_name": "RoboDojo", "env_cfg_type": "arx_x5", "action_type": "joint",
+    cfg = {"policy_name": "WorldScape_R2SI", "bench_name": "RoboDojo", "env_cfg_type": "arx_x5", "action_type": "joint",
            "eval_batch": False, "seed": 0}
     model = VersionedModel(ws.root, cfg, mode=args.mode, campaign=args.campaign,
                            memory_device=args.memory_device, flash_device=args.flash_device)

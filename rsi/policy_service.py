@@ -218,8 +218,8 @@ def skill_identity(spec):
 
 
 def verified_config(project, profile, gpu, checkpoints=None):
-    policy_root = project/"XPolicyLab/policy/WorldScape_RSI"
-    catalog = json.loads((project/"XPolicyLab/policy/WorldScape_RSI/harness/configs/wam_skills.json").read_text())
+    policy_root = project/"XPolicyLab/policy/WorldScape_R2SI"
+    catalog = json.loads((project/"XPolicyLab/policy/WorldScape_R2SI/harness/configs/wam_skills.json").read_text())
     spec = catalog["worldscape-wam-memory" if profile == "memory" else "worldscape-wam-nomemory"]
     checkpoint = Path((checkpoints or json.loads((project/"provenance/checkpoints.private.json").read_text()))[profile]["path"])
     for root, files in [(policy_root, spec["source_files"]), (checkpoint, spec["checkpoint_files"])]:
@@ -227,7 +227,7 @@ def verified_config(project, profile, gpu, checkpoints=None):
             path = (root/relative).resolve()
             if not path.is_relative_to(root.resolve()) or sha256(path) != expected:
                 raise RuntimeError("Pinned model source/checkpoint verification failed")
-    from XPolicyLab.policy.WorldScape_RSI.xpolicylab_adapter.runtime_config import resolve_checkpoint_deployment_config, validate_config
+    from XPolicyLab.policy.WorldScape_R2SI.xpolicylab_adapter.runtime_config import resolve_checkpoint_deployment_config, validate_config
     cfg = {**spec["config"], "checkpoint_path": str(checkpoint),
            "worldscape_root": str(policy_root/"worldscape-policy"), "device": f"cuda:{gpu}",
            "multi_gpu": {"enabled": False}, "eval_batch": False}
@@ -236,7 +236,7 @@ def verified_config(project, profile, gpu, checkpoints=None):
 
 
 def uniform_worker(config):
-    from XPolicyLab.policy.WorldScape_RSI.robodojo_server.session_model import WorkerSessions
+    from XPolicyLab.policy.WorldScape_R2SI.robodojo_server.session_model import WorkerSessions
     worker = WorkerSessions(config)
     base = worker.base
     if base.short_window_for_non_memory_tasks:
@@ -252,7 +252,7 @@ def uniform_worker(config):
 async def serve(project, workspace, host, ports, max_trials, *, device_profiles=None, checkpoints=None, ssl_context=None):
     from aiohttp import web
     from XPolicyLab.client_server.ws.protocol.codec import encode_frame, decode_frame
-    from XPolicyLab.policy.WorldScape_RSI.xpolicylab_adapter.multi_gpu import ProcessWorker
+    from XPolicyLab.policy.WorldScape_R2SI.xpolicylab_adapter.multi_gpu import ProcessWorker
     ws = Workspace(workspace)
     os.environ.update(ws.environment())
     token_file = ws.path("private/policy-token")

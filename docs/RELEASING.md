@@ -1,11 +1,11 @@
 # Export the official policy / 导出官方策略
 
-The full repository is the development source. The XPolicyLab PR adds only `policy/WorldScape_RSI/`.
+The full repository is the development source. The XPolicyLab PR adds only `policy/WorldScape_R2SI/`.
 
-完整仓库是开发源，官方 PR 只新增 `policy/WorldScape_RSI/`。
+完整仓库是开发源，官方 PR 只新增 `policy/WorldScape_R2SI/`。
 
 ```bash
-python -B scripts/export_policy.py --output /shared/releases/WorldScape_RSI-policy.tar.gz
+python -B scripts/export_policy.py --output /shared/releases/WorldScape_R2SI-policy.tar.gz
 ```
 
 Extract the archive into an official XPolicyLab checkout. It contains the Agent, generic Skills, WAM implementation and standard install/data/train/eval scripts.
@@ -15,7 +15,7 @@ Extract the archive into an official XPolicyLab checkout. It contains the Agent,
 After changing frozen runtime assets in a candidate copy, refresh its manifest:
 
 ```bash
-cd XPolicyLab/policy/WorldScape_RSI
+cd XPolicyLab/policy/WorldScape_R2SI
 python -B maintain_manifest.py --write-new-release
 python -B maintain_manifest.py
 ```

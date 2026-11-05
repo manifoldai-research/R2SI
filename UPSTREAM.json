@@ -1,7 +1,7 @@
 {
   "repository": "https://github.com/XPolicyLab/XPolicyLab",
   "commit": "7074afbcb2223caf21dcee9a803f1025b2c8c76b",
-  "layout": "Bundled shared runtime subset plus policy/WorldScape_RSI",
+  "layout": "Bundled shared runtime subset plus policy/WorldScape_R2SI",
   "shared_files": 341,
-  "official_pr_directory": "policy/WorldScape_RSI"
+  "official_pr_directory": "policy/WorldScape_R2SI"
 }

@@ -4,18 +4,20 @@
 
 WorldScape R²SI 将机器人控制 Agent 与自主改进循环结合起来。内层 Agent 根据视觉观测和通用 Skill，选择原生操作工具或 WorldScape Flash/Memory 策略。外层 Agent 回顾采集回合，更新可复用的 Skill 和 Memory，验证候选版本，并将选定版本用于后续回合。
 
+统一策略目录为 `XPolicyLab/policy/WorldScape_R2SI/`，默认入口为带 ICL-RAG 的 v4 代码编写 Agent。通用 Skill、Memory、Flash/Memory WAM 和外层 RSI 通过 Harness 的版本边界接入这一套 Agent。
+
 ## 包含的功能
 
 - **内层 Agent：** 视觉推理、原生运动工具、Flash/Memory 策略调用和动作边界接管。
 - **通用经验库：** 跨任务共享的 34 份 Skill、4 个工具和 2 个原语。
 - **自主 RSI：** 采集、多模态反思、候选构建、配对验证和本地版本启用。
-- **模型训练：** RoboDojo 数据准备、Flash/Memory 训练、数据快照和新权重独立服务。
+- **WSP 训练接口：** 当前为预留接口；保留数据准备与 WAM 推理，暂未接入训练后端。
 - **评测：** 官方 XPolicyLab 接口，以及 Agent、协议和外层循环测试。
 
 ## 仓库结构
 
 ```text
-XPolicyLab/policy/WorldScape_RSI/  内层 Agent、通用 Skill、WAM 源码与官方入口
+XPolicyLab/policy/WorldScape_R2SI/  内层 Agent、通用 Skill、WAM 源码与官方入口
 XPolicyLab/                      随附的官方协议及运行依赖
 rsi/                             外层迭代、经验、版本、任务与模型服务
 scripts/                         配置、采集、仿真 worker、迭代及导出
@@ -25,17 +27,17 @@ docs/                            安装、架构与使用说明
 tests/                           外层及集成测试
 ```
 
-随附 XPolicyLab 共享文件的版本记录在 [UPSTREAM.json](UPSTREAM.json)。官方 PR 对应单个 `policy/WorldScape_RSI/` 目录，完整仓库同时包含外层 RSI 代码。
+随附 XPolicyLab 共享文件的版本记录在 [UPSTREAM.json](UPSTREAM.json)。官方 PR 对应单个 `policy/WorldScape_R2SI/` 目录，完整仓库同时包含外层 RSI 代码。
 
 ## 安装
 
-按[运行环境安装指南](XPolicyLab/policy/WorldScape_RSI/INSTALLATION.md)准备环境，再从本仓库运行：
+按[运行环境安装指南](XPolicyLab/policy/WorldScape_R2SI/INSTALLATION.md)准备环境，再从本仓库运行：
 
 ```bash
 bash install.sh
 ```
 
-下载 [Flash 和 Memory 权重](XPolicyLab/policy/WorldScape_RSI/README_zh.md#模型权重)，设置 `ROBODOJO_ROOT`，并在协调机和仿真机的 shell 中配置 `R2SI_API_BASE`、`R2SI_API_KEY`。
+下载 [Flash 和 Memory 权重](XPolicyLab/policy/WorldScape_R2SI/WAM.md#model-assets)，设置 `ROBODOJO_ROOT`，并在协调机和仿真机的 shell 中配置 `R2SI_API_BASE`、`R2SI_API_KEY`。
 
 ## 运行自主 RSI
 
@@ -63,7 +65,7 @@ python -B scripts/local_worker.py --workspace /shared/rsi/run-001 --devices cuda
 python -B scripts/iterate.py --config /shared/rsi/run-001/campaign.json
 ```
 
-启动后，采集、反思、候选生成和验证自动执行，无需手动输入提案。默认使用官方非 Open layout 改进通用 Skill 和 Memory；配置训练数据与预算后可启用模型训练。
+启动后，采集、反思、候选生成和验证自动执行，无需手动输入提案。默认使用官方非 Open layout 改进通用 Skill 和 Memory；WSP 训练当前为预留接口，不能通过配置启用。
 
 共享存储、短临时路径、多 worker、远程 WAM 服务和训练配置见[自主 RSI](docs/LOCAL_RSI.md)。
 
@@ -72,11 +74,13 @@ python -B scripts/iterate.py --config /shared/rsi/run-001/campaign.json
 官方 Agent 入口可独立于外层循环运行：
 
 ```bash
-cd XPolicyLab/policy/WorldScape_RSI
+cd XPolicyLab/policy/WorldScape_R2SI
 bash eval.sh RoboDojo stack_bowls public arx_x5 joint 0 0,1 0 r2si base
 ```
 
-权重、环境名和分机评测配置见[策略使用指南](XPolicyLab/policy/WorldScape_RSI/README_zh.md)。
+权重、环境名和分机评测配置见[策略使用指南](XPolicyLab/policy/WorldScape_R2SI/README_zh.md)。
+
+独立评测与外层 RSI 共用这一套 Agent，都需按策略指南配置 SAM 3。
 
 ## 文档
 

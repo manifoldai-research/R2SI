@@ -12,7 +12,7 @@ from uuid import uuid4
 import pytest
 
 PROJECT = Path(__file__).resolve().parents[1]
-POLICY = PROJECT / "XPolicyLab/policy/WorldScape_RSI"
+POLICY = PROJECT / "XPolicyLab/policy/WorldScape_R2SI"
 
 
 def fresh_process(tmp_path, source):
@@ -93,7 +93,7 @@ print('startup_enforced')
 
 
 def server_types():
-    from XPolicyLab.policy.WorldScape_RSI.harness.server import SingleTrialServer
+    from XPolicyLab.policy.WorldScape_R2SI.harness.server import SingleTrialServer
     from client_server.ws.model_server import PolicyServerConfig
     from client_server.ws.protocol.schemas import Frame
     from client_server.ws.protocol.messages import MessageType as M

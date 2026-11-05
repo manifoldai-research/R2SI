@@ -1,0 +1,31 @@
+policy_name: WorldScape_R2SI
+protocol: ws
+host: localhost
+port: null
+bench_name: RoboDojo
+task_name: null
+ckpt_name: null
+env_cfg_type: arx_x5
+seed: 0
+action_type: joint
+gpu_id: null
+eval_batch: false
+release_path: harness/release.json
+release_sha256: null
+# The model that writes the code cells.
+model: gpt-6-astra
+effort: high
+# Seconds one model request may take.
+request_timeout_s: 900
+# Seconds one evaluator request waits for the agent before a single hold action is returned instead.
+keepalive_s: 90
+# Optional WebSocket WAM service. Null uses bundled Flash/Memory with the WRSI checkpoint bindings.
+policy_service: null
+# SAM 3 weights (facebook/sam3).
+segmenter_checkpoint: checkpoints/sam3/sam3.pt
+# A configured engine is required to succeed before the first decision; null explicitly selects the no-reference baseline.
+icl_config: null
+icl_python: null
+icl_timeout_s: 180
+icl_max_images: 64
+icl_max_text_chars: 32000

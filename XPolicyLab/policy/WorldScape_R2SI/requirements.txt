@@ -1,0 +1,17 @@
+-r requirements-wam.txt
+numpy>=1.26,<2
+scipy
+pillow
+pyyaml
+transforms3d
+einops
+pycocotools
+psutil
+timm
+ftfy
+regex
+iopath
+hydra-core
+omegaconf
+huggingface_hub==0.34.4
+sam3 @ git+https://github.com/RLinf/sam3.git@c1f6b1e83967c912f675d8975d437ccdc41e17d8

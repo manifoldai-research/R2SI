@@ -6,7 +6,7 @@ import threading
 import unittest
 from unittest.mock import patch
 
-from XPolicyLab.policy.WorldScape_RSI.harness.provider import ResponsesClient
+from XPolicyLab.policy.WorldScape_R2SI.harness.provider import ResponsesClient
 
 
 class CleanupTests(unittest.TestCase):

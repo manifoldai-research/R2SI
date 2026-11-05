@@ -35,6 +35,9 @@ train.add_argument("--max-steps", type=int, required=True)
 train.add_argument("--timeout", type=int, required=True)
 train.add_argument("--overrides", nargs="*", default=[])
 args = parser.parse_args()
+if args.command == 'train':
+    from XPolicyLab.policy.WorldScape_R2SI.training import require_training_backend
+    require_training_backend()
 registry = Registry(args.workspace)
 os.environ.update(registry.ws.environment())
 if args.command == "status":
