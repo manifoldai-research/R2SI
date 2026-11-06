@@ -1,0 +1,15 @@
+{
+  "id": "turn-and-tilt",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "Turn, tip and pour held things within reach, with the grip checked and the flow watched.",
+  "load_mode": "always"
+}

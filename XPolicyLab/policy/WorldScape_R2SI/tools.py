@@ -99,6 +99,7 @@ class Tools:
         self.held_points = {arm: {} for arm in ARMS}
         self.grasped = {arm: None for arm in ARMS}   # what the last pick held: the part below and above the grasp point
         self.policy_service = policy_service         # where the learned policy runs
+        self.policy_services = {}                    # profile -> service address, when each profile has its own service
         self.open_policy = wam.Session
         self.read_service = wam.service_info
         self.policy = None          # the policy's session while nothing else has moved the robot since its last action
@@ -106,7 +107,7 @@ class Tools:
         self.policy_text = None
         self.counters = {"locate_calls": 0, "segment_calls": 0, "picks": 0, "picks_held": 0, "places": 0, "places_ok": 0, "strokes": 0, "turns": 0,
                          "both_calls": 0, "homes": 0, "watches": 0, "goal_failures": 0, "pick_refined": 0, "reach_queries": 0, "estimates": 0,
-                         "policy_calls": 0, "policy_sessions": 0, "policy_chunks": 0, "policy_steps": 0, "policy_lagging_steps": 0, "policy_wait_s": 0.0, "policy_predict_s": 0.0, "policy_observe_s": 0.0,
+                         "policy_calls": 0, "policy_memory_calls": 0, "policy_memory_steps": 0, "policy_sessions": 0, "policy_chunks": 0, "policy_steps": 0, "policy_lagging_steps": 0, "policy_wait_s": 0.0, "policy_predict_s": 0.0, "policy_observe_s": 0.0,
                          "policy_config": None}
 
     @property
@@ -901,8 +902,15 @@ class Tools:
                     self.end_policy()
                     self.policy_service = selected
                     self.counters['policy_config'] = None
-            elif self.policy_service is not None and self.read_service(self.policy_service).get('profile') != profile:
-                raise ValueError('The configured WAM service does not serve the requested profile')
+            elif self.policy_service is not None:
+                target = self.policy_services.get(profile)
+                if target is not None:
+                    if target != self.policy_service:
+                        self.end_policy()
+                        self.policy_service = target
+                        self.counters['policy_config'] = None
+                elif self.read_service(self.policy_service).get('profile') != profile:
+                    raise ValueError('The configured WAM service does not serve the requested profile')
         if self.policy_service is None:
             raise ValueError("no learned policy is configured")
         if text is not None and (type(text) is not str or not text.strip()):
@@ -910,6 +918,8 @@ class Tools:
         if type(chunks) is not int or not 1 <= chunks <= POLICY_MAX_CHUNKS:
             raise ValueError(f"chunks must be an integer from 1 to {POLICY_MAX_CHUNKS}")
         self.counters["policy_calls"] += 1
+        if self._profile() == "memory":
+            self.counters["policy_memory_calls"] += 1
         observation = self.observation
         sentence = observation.instruction if text is None else text.strip()
         if self.policy is not None and (self.policy_step != observation.step or self.policy_text != sentence):
@@ -973,6 +983,8 @@ class Tools:
         finally:
             self.counters["policy_chunks"] += done
             self.counters["policy_steps"] += self.bridge.observation.step - started
+            if self._profile() == "memory":
+                self.counters["policy_memory_steps"] += self.bridge.observation.step - started
             self.counters["policy_lagging_steps"] += sum(lagging.values())
             self.counters["policy_predict_s"] = round(self.counters["policy_predict_s"] + sum(session.predictions[predict_s:]), 3)
             self.counters["policy_observe_s"] = round(self.counters["policy_observe_s"] + sum(session.observations[observe_s:]), 3)
@@ -983,6 +995,13 @@ class Tools:
             result["stopped"] = stopped
             self.end_policy()
         return result
+
+    def _profile(self):
+        """Which WAM profile the current service runs, when that is known without asking the service."""
+        service = str(self.policy_service)
+        if service.startswith("bundled:"):
+            return service.split(":", 1)[1]
+        return next((name for name, address in self.policy_services.items() if address == self.policy_service), None)
 
     def _forget_after_policy(self):
         """The policy moved things without measuring them: what was measured, and what the hands were known to hold, no longer stands."""

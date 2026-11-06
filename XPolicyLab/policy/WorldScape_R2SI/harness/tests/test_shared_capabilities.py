@@ -37,7 +37,7 @@ class SharedCatalogTests(unittest.TestCase):
         lib = SkillLibrary(PROBE / 'skills')
         self.assertGreater(len(lib.catalog('skill')), 5)
         self.assertTrue({e['scope'] for e in lib.entries.values()} == {'generic'})
-        self.assertIn('robodojo-interface', lib.initial())
+        self.assertTrue(any(e.get('load_mode') == 'always' for e in lib.entries.values()))
         # Check payload inclusion by manifest policy, not by catalog name.
         initial = lib.initial()
         self.assertLessEqual(len(initial), 24000)

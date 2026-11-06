@@ -1,0 +1,15 @@
+{
+  "id": "two-arm-roles",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "Give each arm a role, pass objects safely and carry things together.",
+  "load_mode": "always"
+}

@@ -11,5 +11,5 @@
   "dependencies": [],
   "description": "关系、排序与朝向约束",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

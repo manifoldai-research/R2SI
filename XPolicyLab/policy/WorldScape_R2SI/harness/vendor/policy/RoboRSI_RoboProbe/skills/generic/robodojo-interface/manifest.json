@@ -11,5 +11,5 @@
   "artifact_type": "tool",
   "description": "RoboDojo 官方观测与控制接口",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

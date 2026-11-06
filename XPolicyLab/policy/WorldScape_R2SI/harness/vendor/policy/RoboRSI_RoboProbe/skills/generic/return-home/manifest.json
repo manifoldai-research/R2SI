@@ -6,6 +6,6 @@
   "stages": [],
   "dependencies": [],
   "version": "0.6.0-general-control-20261023",
-  "load_mode": "always",
+  "load_mode": "on_demand",
   "description": "全场景统一收尾与归位"
 }

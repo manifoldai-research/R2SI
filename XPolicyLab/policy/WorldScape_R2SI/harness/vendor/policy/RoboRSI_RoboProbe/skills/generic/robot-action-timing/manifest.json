@@ -13,5 +13,5 @@
   "artifact_type": "skill",
   "description": "净空航段合并位置姿态，接触/夹爪/反馈边界分开；不重复试抬、逐轴小步或静态wait。",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

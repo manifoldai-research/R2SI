@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "公开进展与纠偏",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

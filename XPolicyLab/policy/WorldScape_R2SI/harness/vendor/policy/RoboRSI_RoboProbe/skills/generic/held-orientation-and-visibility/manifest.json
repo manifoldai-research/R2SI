@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "持有方向与视野取舍",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

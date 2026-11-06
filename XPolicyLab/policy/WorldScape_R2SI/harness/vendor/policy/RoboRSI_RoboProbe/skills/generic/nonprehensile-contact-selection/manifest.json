@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "选择保持支撑的接触面",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

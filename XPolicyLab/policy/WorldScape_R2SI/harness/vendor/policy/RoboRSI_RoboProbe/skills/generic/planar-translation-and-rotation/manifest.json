@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "区分平移接触与旋转力矩",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

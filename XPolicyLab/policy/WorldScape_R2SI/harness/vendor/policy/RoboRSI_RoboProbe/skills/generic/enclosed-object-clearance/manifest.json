@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "解除包围后再横移",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

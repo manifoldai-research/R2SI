@@ -11,5 +11,5 @@
   "dependencies": [],
   "description": "离散交互与因果反馈",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

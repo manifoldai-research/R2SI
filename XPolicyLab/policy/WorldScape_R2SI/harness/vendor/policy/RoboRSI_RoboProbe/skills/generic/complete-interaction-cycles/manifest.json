@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "完整离散交互周期",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

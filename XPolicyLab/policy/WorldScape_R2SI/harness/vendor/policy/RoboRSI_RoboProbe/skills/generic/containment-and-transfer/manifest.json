@@ -11,5 +11,5 @@
   "dependencies": [],
   "description": "开口、边界与受限转移",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

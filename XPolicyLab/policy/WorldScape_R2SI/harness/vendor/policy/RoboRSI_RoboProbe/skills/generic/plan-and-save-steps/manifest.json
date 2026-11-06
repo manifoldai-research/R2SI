@@ -1,0 +1,15 @@
+{
+  "id": "plan-and-save-steps",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "Plan the whole job from the end backwards and spend native steps where they count.",
+  "load_mode": "always"
+}

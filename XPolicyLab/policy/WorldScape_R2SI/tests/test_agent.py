@@ -1106,8 +1106,31 @@ def test_a_session_reports_a_broken_service_as_a_failure():
 
 def test_prompt_text_is_generic():
     text = prompt.system_prompt()
-    assert len(text) < 40000, len(text)
+    # Memory rules, tool notes, the always-loaded Skills (with the WSP Skill) and the on-demand catalog replace the former handbook.
+    assert len(text) < 52000, len(text)
     assert "episode ends" not in text.lower() and "episode is over" not in text.lower(), "the prompt must not teach the end of the episode as a signal"
+
+
+def test_prompt_loads_memory_rules_and_always_skills():
+    from XPolicyLab.policy.WorldScape_R2SI.skills import ROOT, library
+    text = prompt.system_prompt()
+    parts = prompt.parts()
+    lib = library()
+    memory = sorted((ROOT / "memory").glob("*.md"))
+    assert memory and parts["memory_rules"] == [path.name for path in memory], parts
+    for path in memory:
+        assert path.read_text(encoding="utf-8") in text, path.name
+    always = [key for key, entry in lib.entries.items() if entry.get("load_mode") == "always"]
+    assert always and sorted(always) == parts["skills_always"], parts
+    for key in always:
+        assert lib.entries[key]["text"] in text, key
+    for row in lib.catalog("skill"):
+        if lib.entries[row["id"]].get("load_mode") != "always":
+            assert f"- {row['id']}: " in text and lib.entries[row["id"]]["text"] not in text, row["id"]
+    assert parts["skills_on_demand"] == len(lib.entries) - len(always)
+    assert "handbook" not in text.lower()
+    # ICL usage guidance is part of the robo.reference tool description, given once.
+    assert text.count("ICL-RAG is your core demonstration-reference tool.") == 1
 
 
 def main():

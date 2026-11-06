@@ -10,9 +10,14 @@ def library():
     return SkillLibrary(ROOT / 'vendor/policy/RoboRSI_RoboProbe/skills')
 
 
+def memory_files():
+    """The Memory rule files every episode loads, in order."""
+    return [path.name for path in sorted((ROOT / 'memory').glob('*.md'))]
+
+
 def shared_context():
-    """Load candidate Memory on each episode; never reuse another version's cache."""
-    rows = ['# Shared Memory']
+    """Load candidate Memory rules on each episode; never reuse another version's cache."""
+    rows = ['# Memory rules']
     for path in sorted((ROOT / 'memory').glob('*.md')):
         if path.is_symlink():
             raise ValueError('Memory must be a regular release file')

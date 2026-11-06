@@ -11,5 +11,5 @@
   "dependencies": [],
   "description": "接触、精细适配与旋转配合",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

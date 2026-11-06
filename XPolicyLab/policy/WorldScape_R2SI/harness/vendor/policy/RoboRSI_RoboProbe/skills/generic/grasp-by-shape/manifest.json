@@ -1,0 +1,15 @@
+{
+  "id": "grasp-by-shape",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "Take and hold things by their shape, check the hold, and change something real after failures.",
+  "load_mode": "always"
+}

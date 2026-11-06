@@ -1,0 +1,15 @@
+{
+  "id": "push-press-and-fit",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "Push, press, strike, fit tightly and drive mechanisms with checked contact.",
+  "load_mode": "always"
+}

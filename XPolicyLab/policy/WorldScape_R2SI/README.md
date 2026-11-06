@@ -16,7 +16,7 @@ The former `R2SI/` and `WorldScape_RSI/` adapters are now one policy. `model.py`
 - **Measurement** (`objects.py`, `segmenter.py`, `cameras.py`): text- or point-prompted masks from SAM 3, turned into world geometry with the public camera calibration. Two cameras agreeing on a prism fix its height; pixels covered by the robot, drawn from its meshes, do not count against it.
 - **Motion** (`control.py`, `planning.py`, `kinematics.py`, `timing.py`, `monitor.py`): joint goals chosen by distance from the current posture inside the arm's real joint range, robot-only cuRobo paths, straight Cartesian lines by damped least squares, trapezoidal timing at set joint speeds below the drive's limits, and joint tracking as the only contact feedback.
 - **Learned policy** (`wam.py`, `robo.policy`): one more thing the agent can call. A policy that its authors post-trained on demonstrations of this benchmark's tasks drives both arms for a few chunks of native steps, seeing the three cameras, the joints and one sentence. Whether to call it is the agent's decision in each episode, from what it sees.
-- **Knowledge** (`knowledge/`): one handbook, always in the prompt. It holds general manipulation practice and the cross-task scoring rules.
+- **Memory rules, Skills and tool notes** (`harness/memory/`, the Skill library, `knowledge/tool-notes.md`): the former handbook split as in the report's H = (M, K, T). Memory rules (the situation, what you know, how work is scored) and the Skills with `load_mode: always` are in the prompt at every step; other Skills are listed by id and read with `robo.read_skill`; tool notes follow the robo reference.
 
 `INFORMATION.md` lists everything the policy reads at run time and where each constant comes from.
 

@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "薄截面与狭缝方向匹配",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

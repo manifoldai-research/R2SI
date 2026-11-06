@@ -1,0 +1,15 @@
+{
+  "id": "wsp-learned-policy",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "When and how to hand both arms to the learned policy (WSP flash or memory), and how to take over.",
+  "load_mode": "always"
+}

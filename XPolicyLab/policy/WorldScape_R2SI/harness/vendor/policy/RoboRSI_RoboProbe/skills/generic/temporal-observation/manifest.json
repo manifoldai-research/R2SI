@@ -11,5 +11,5 @@
   "dependencies": [],
   "description": "时序观察与记忆",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

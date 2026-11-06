@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "远端已持载荷的回收路径",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

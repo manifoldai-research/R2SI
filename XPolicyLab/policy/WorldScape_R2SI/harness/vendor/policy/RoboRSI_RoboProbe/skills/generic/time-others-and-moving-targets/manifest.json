@@ -1,0 +1,15 @@
+{
+  "id": "time-others-and-moving-targets",
+  "interface": "roborsi.public.v1",
+  "kind": "text",
+  "artifact_type": "skill",
+  "stages": [
+    "think",
+    "feedback"
+  ],
+  "dependencies": [],
+  "implementation": "text",
+  "version": "1.0.0-structure-20261106",
+  "description": "Wait, give others room, note what you will need later, and meet moving targets.",
+  "load_mode": "always"
+}

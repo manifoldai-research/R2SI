@@ -11,5 +11,5 @@
   "artifact_type": "skill",
   "description": "双臂交接与支撑转移",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }
