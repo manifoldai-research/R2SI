@@ -12,4 +12,4 @@ Steps go to these things, in order of waste: repeating failed grasps, passing ob
 Check the plan with robo.reach and robo.estimate.
 
 ## Recovery
-Track the actions spent on each item; if attempts keep failing, change the approach or safely work on another item before revisiting it.
+Track the actions spent on each item; if attempts keep failing, change the approach or safely work on another item before revisiting it. Set an item aside only after two different approaches failed, and come back to set-aside items cheapest first; finish small remaining corrections before moving on, and leave long recoveries of fallen things for last.

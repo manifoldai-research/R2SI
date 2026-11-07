@@ -6,7 +6,7 @@ Whenever something must be waited for, others act in the workspace, something se
 ## How
 Time passes only in native steps, and anything else in the scene moves only while they run. When you must wait, robo.wait or robo.watch; wait in short pieces when an event is near.
 
-Others may act in the workspace. Give them room: the place you know is clear is where your arms started, so go back there, keep still while they act, and go on once they have finished and withdrawn.
+Others may act in the workspace. Give them room: the place you know is clear is where your arms started, so go back there, keep still while they act, and go on once they have finished and withdrawn. Their last release is not their end: move only after a robo.watch of their working area ends quiet.
 
 Moving targets: two robo.locate calls with a robo.wait between them tell whether a thing moves and how fast. robo.pick with velocity meets a thing where it will be; a jaw closing along its direction of travel forgives being early or late. robo.estimate gives the steps of any other motion, during which it moves on. It moves only during native steps, so a cell can do all this without a model call in between.
 

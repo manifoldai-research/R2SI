@@ -21,6 +21,7 @@ GRASP_MIN_ABOVE_M = 0.009     # the lowest grasp point above a support: the fing
 GRASP_SHARE = 0.25            # a straight-down grasp sits this share of the object's height below its top ...
 GRASP_DEPTH_MIN_M = 0.012     # ... at least this far ...
 GRASP_DEPTH_MAX_M = 0.04      # ... and at most this far
+COMPACT_GRASP_SHARE = 0.5     # a footprint with no long side is held at half its height, where a round thing is widest
 RELEASE_MARGIN_M = 0.004      # a placement on a known support releases this far above it
 ROUND_ASPECT = 1.25           # below this aspect a footprint gives no jaw direction
 RAY_HEIGHTS_M = (0.005, 0.02, 0.05, 0.10, 0.18)   # heights above the surface sampled along a viewing ray
@@ -54,9 +55,12 @@ class Failed(Exception):
         self.result = result
 
 
-def grasp_height(top: float, bottom: float) -> float:
-    """Where a straight-down grasp point goes on an object between these heights: the pads on its upper part, the fingertips off its support."""
-    depth = min(GRASP_DEPTH_MAX_M, max(GRASP_DEPTH_MIN_M, GRASP_SHARE * (top - bottom)))
+def grasp_height(top: float, bottom: float, compact: bool = False) -> float:
+    """Where a straight-down grasp point goes on an object between these heights: the pads on its upper part, the fingertips off its support.
+    compact: the footprint has no long side, so it may be round; it is then held at half its height, where a round thing is widest
+    (a pinch above that line slips out), still at most GRASP_DEPTH_MAX_M below the top."""
+    share = COMPACT_GRASP_SHARE if compact else GRASP_SHARE
+    depth = min(GRASP_DEPTH_MAX_M, max(GRASP_DEPTH_MIN_M, share * (top - bottom)))
     return max(bottom + GRASP_MIN_ABOVE_M, top - depth)
 
 
@@ -408,7 +412,10 @@ class Tools:
             watcher.capture(self._image(camera), self.observation.step - start)
         if len(watcher.samples) > 1:
             self.attachments += watcher.sheet()
-        return watcher.report(ended)
+        report = watcher.report(ended)
+        if watcher.seen_activity and watcher.quiet_run == 0 and len(watcher.samples) > 1:
+            report.update(active_at_end=True, note="something was still changing at the last sample: it may not have finished")
+        return report
 
     # -- planning without moving ----------------------------------------------------------------------
     def do_reach(self, points, arm=None, quaternion_wxyz=None, lean_deg=None, clearance_m=0.0, approach="vertical"):
@@ -552,14 +559,15 @@ class Tools:
                 raise ValueError("target must be an object from locate or a world grasp point [x, y, z]")
             top, bottom = float(target["top_z"]), float(target.get("bottom_z", frames.TABLE_Z))
             reference = self.ctl.grasp(observation, arm)[1] if self._pointing_down(observation, arm) else frames.DOWN
+            compact = float(target.get("length_m", 0.0)) < ROUND_ASPECT * max(float(target.get("width_m", 0.0)), 1e-6)
             if quaternion is not None:
                 q = frames.normalized(quaternion)
-            elif float(target.get("length_m", 0.0)) >= ROUND_ASPECT * max(float(target.get("width_m", 0.0)), 1e-6):
+            elif not compact:
                 q = frames.jaw_across(math.radians(float(target["long_side_deg"])), reference)
             else:
                 q = reference
             from_side = float(frames.pointing_axis(q)[2]) > -STEEP_POINTING
-            height = bottom + SIDE_GRASP_SHARE * (top - bottom) if from_side else grasp_height(top, bottom)
+            height = bottom + SIDE_GRASP_SHARE * (top - bottom) if from_side else grasp_height(top, bottom, compact)
             position = np.array([float(target["x"]), float(target["y"]), height if z is None else float(z)])
             return position, q, target
         position = np.asarray(target, dtype=np.float64).reshape(-1)
@@ -613,7 +621,7 @@ class Tools:
             return found
         return look
 
-    def _make_pick(self, observation, arm, target, quaternion_wxyz=None, z=None, approach="pointing", clearance_m=None, opening=1.0, lift_m=actions.LIFT_M, symmetry=1, check_hold=True, look=True, velocity=None):
+    def _make_pick(self, observation, arm, target, quaternion_wxyz=None, z=None, approach="pointing", clearance_m=None, opening=1.0, lift_m=actions.LIFT_M, symmetry=1, check_hold=True, look=True, velocity=None, to=None):
         position, q, source = self._grasp_for(target, arm, observation, quaternion_wxyz, z)
         looking = bool(look) and source is not None
         clearance = (LOOK_CLEARANCE_M if looking else actions.CLEARANCE_M) if clearance_m is None else clearance_m
@@ -622,7 +630,7 @@ class Tools:
         if source is not None and quaternion_wxyz is None and float(source.get("length_m", 0.0)) < ROUND_ASPECT * max(float(source.get("width_m", 0.0)), 1e-6):
             symmetry = 0 if symmetry == 1 else symmetry
         goal = actions.Pick(self.ctl, arm, observation, position, q, approach=approach, clearance_m=clearance, opening=opening, lift_m=lift_m, symmetry=symmetry, check_hold=check_hold,
-                            look=self._looker(arm, source, z) if looking else None, velocity=velocity,
+                            look=self._looker(arm, source, z) if looking else None, velocity=velocity, to=to,
                             # A grasp at a chosen point still takes the measured object around that point, with its size and its phrase.
                             source=self.ctl.scene.around(position) if source is None else source)
         return goal
@@ -819,8 +827,8 @@ class Tools:
         axis = {"x": (1.0, 0.0, 0.0), "y": (0.0, 1.0, 0.0), "z": (0.0, 0.0, 1.0)}.get(axis, axis) if isinstance(axis, str) else axis
         return _rounded(frames.turned(quaternion_wxyz, np.asarray(axis, dtype=np.float64) / np.linalg.norm(axis), float(degrees)), 5)
 
-    def do_pick(self, arm, target, quaternion_wxyz=None, z=None, approach="pointing", clearance_m=None, opening=1.0, lift_m=actions.LIFT_M, symmetry=1, check_hold=True, look=True, velocity=None, force=False):
-        goal = self._make_pick(self.observation, arm, target, quaternion_wxyz, z, approach, clearance_m, opening, lift_m, symmetry, check_hold, look, velocity)
+    def do_pick(self, arm, target, quaternion_wxyz=None, z=None, approach="pointing", clearance_m=None, opening=1.0, lift_m=actions.LIFT_M, symmetry=1, check_hold=True, look=True, velocity=None, force=False, to=None):
+        goal = self._make_pick(self.observation, arm, target, quaternion_wxyz, z, approach, clearance_m, opening, lift_m, symmetry, check_hold, look, velocity, to)
         result = self._run_one(arm, goal, force)
         self._after_pick(arm, goal, result)
         return result

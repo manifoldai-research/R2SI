@@ -9,7 +9,7 @@
   ],
   "dependencies": [],
   "implementation": "text",
-  "version": "1.0.0-structure-20261106",
+  "version": "1.1.0-merge-20261106",
   "description": "Release at the right height on a supported seat; check before and after letting go.",
   "load_mode": "always"
 }

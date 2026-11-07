@@ -1,7 +1,7 @@
 {
   "schema": "r2si.trial-state-remediation.v1",
   "validated_at_utc": "2026-11-05T14:00:00.933572+00:00",
-  "release_sha256": "22a175bed0c1b62f649e3681341fbdd55497ccd49fc395a35f1efdf3a5bbc225",
+  "release_sha256": "9b0c56d0a4af19705432675d02e9e1cf0d9682edfe30077fe0919b70741b2748",
   "official_baseline_commit": "7074afbcb2223caf21dcee9a803f1025b2c8c76b",
   "official_single_entry_eligible": false,
   "eligibility_status": "current_simulator_and_clean_environment_reproduction_not_completed",
@@ -741,6 +741,13 @@
         "simulator_evaluation": {
           "performed": false
         }
+      },
+      "reason": "Source/documentation changed; earlier checks remain historical"
+    },
+    {
+      "release_sha256": "22a175bed0c1b62f649e3681341fbdd55497ccd49fc395a35f1efdf3a5bbc225",
+      "checks": {
+        "status": "requires_validation_for_new_identity"
       },
       "reason": "Source/documentation changed; earlier checks remain historical"
     }

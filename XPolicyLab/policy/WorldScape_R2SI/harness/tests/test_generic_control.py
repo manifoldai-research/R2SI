@@ -74,7 +74,7 @@ class GenericControlTests(unittest.TestCase):
         backends.register_vendor()
         from XPolicyLab.policy.RoboRSI_RoboProbe.library import SkillLibrary
         lib=SkillLibrary(ROOT/'vendor/policy/RoboRSI_RoboProbe/skills');self.assertTrue(all(e['scope']=='generic' for e in lib.entries.values()))
-        self.assertIn('return-home',lib.entries)
+        self.assertIn('place-and-release',lib.entries)
         with self.assertRaises(ValueError):lib.initial(1)
     def test_return_home_uses_saved_pose_not_agent_coordinates(self):
         backends.register_vendor()

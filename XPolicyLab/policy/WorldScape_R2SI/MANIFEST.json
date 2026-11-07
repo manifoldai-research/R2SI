@@ -1,7 +1,7 @@
 {
   "schema": "r2si.harness-integration.v2",
   "active_manifest": "harness/release.json",
-  "active_release_sha256": "22a175bed0c1b62f649e3681341fbdd55497ccd49fc395a35f1efdf3a5bbc225",
+  "active_release_sha256": "9b0c56d0a4af19705432675d02e9e1cf0d9682edfe30077fe0919b70741b2748",
   "architecture": "one code-writing Agent with shared Skills, Memory, ICL and Flash/Memory WAM",
   "official_single_entry_eligible": false,
   "eligibility_status": "unverified",

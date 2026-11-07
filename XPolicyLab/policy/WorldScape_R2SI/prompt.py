@@ -14,7 +14,8 @@ CONTRACT = """You control a two-arm robot on a table by writing Python. Your onl
 The Memory rules above always apply. The Skills used at every step follow the robo reference in full; more Skills are
 listed at the end by id, and robo.read_skill(id, offset=0) reads one when it fits your situation (robo.skills() lists
 all). Skill text is guidance, not executable code: any older tool names in it describe capabilities; execute only the
-documented robo methods below.
+documented robo methods below. Where a Skill read on demand disagrees with the Memory rules or the Skills given in full,
+follow the latter.
 
 """
 

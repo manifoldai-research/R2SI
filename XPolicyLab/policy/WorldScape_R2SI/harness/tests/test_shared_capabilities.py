@@ -66,7 +66,7 @@ class SharedCatalogTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 SkillLibrary(root)
             (root / 'tasks').rmdir()
-            manifest = root / 'generic/goal-interpretation/manifest.json'
+            manifest = root / 'generic/grasp-by-shape/manifest.json'
             original = json.loads(manifest.read_text(encoding='utf-8'))
             for field in ('task_context_file', 'task_ids', 'aliases', 'keywords', 'routes'):
                 data = {**original, field: ['injected']}

@@ -436,23 +436,28 @@ print(max(abs(a - b) for a, b in zip(s['arms']['left']['joints'], s2['arms']['le
     assert len(calls) >= 3
 
 
-def test_slow_motions_take_about_three_times_the_steps():
+def test_slow_motions_take_more_steps_only_while_holding():
+    # slow goes at the tracked step while the hand may hold something (about twice the steps of carrying); an empty hand ignores it.
     code = """
-q = robo.state()['arms']['left']['quaternion_wxyz']
+s = robo.state()['arms']['left']['position']
+e1 = robo.move('left', [s[0] - 0.1, s[1] + 0.1, s[2] - 0.05])
+e2 = robo.move('left', s, slow=True)
+robo.move('left', s, opening=0.0)
 a = robo.turn('left', 'x', 40, frame='tool')
 b = robo.turn('left', 'x', -40, frame='tool', slow=True)
-print(a['steps'], b['steps'])
-s = robo.state()['arms']['left']['position']
 c = robo.move('left', [s[0] - 0.1, s[1] + 0.1, s[2] - 0.05])
 d = robo.move('left', s, slow=True)
+print(e1['steps'], e2['steps'])
+print(a['steps'], b['steps'])
 print(c['steps'], d['steps'])
 """
     client, env, tools = run_episode([code])
     out = outputs(client)[0]
     assert out["status"] == "complete", out
-    turn, move = [[int(v) for v in line.split()] for line in out["stdout"].splitlines()]
-    assert turn[1] >= 2 * turn[0], out
-    assert move[1] >= 2 * move[0], out
+    empty, turn, move = [[int(v) for v in line.split()] for line in out["stdout"].splitlines()]
+    assert empty[1] <= empty[0] + 1, out
+    assert turn[1] >= 1.5 * turn[0], out
+    assert move[1] >= 1.5 * move[0], out
 
 
 def test_a_moving_target_is_met_where_it_will_be():
@@ -470,6 +475,27 @@ print(r['ok'], r['lead_steps'], r['grasp_point'][0] - t[0], t[1])
     ok, lead, offset, _ = out["stdout"].split()
     assert ok == "True" and int(lead) > 5, out
     assert abs(float(offset) - 0.002 * int(lead)) < 0.003, out
+
+
+def test_pick_with_to_checks_the_set_down_too():
+    # With to, the pick takes a hand from which the carry and the set-down there can also be planned; with an unreachable to it still grasps.
+    code = """
+s = robo.state()
+p = s['arms']['left']['position']
+q = robo.hand([0, 0, -1], [1, 0, 0])
+t = [p[0], p[1] + 0.05, p[2] - 0.08]
+r = robo.pick('left', t, quaternion_wxyz=q, clearance_m=0.05, to=[p[0] - 0.05, p[1] + 0.05, p[2] - 0.08])
+print(r['ok'], r.get('to_checked'))
+robo.place('left', [p[0] - 0.05, p[1] + 0.05, p[2] - 0.08])
+r = robo.pick('left', [p[0] - 0.05, p[1] + 0.05, p[2] - 0.08], quaternion_wxyz=q, clearance_m=0.05, to=[5.0, 5.0, 0.8])
+print(r['ok'], r.get('to_checked'), 'to_note' in r)
+"""
+    client, env, tools = run_episode([code])
+    out = outputs(client)[0]
+    assert out["status"] == "complete", out
+    first, second = out["stdout"].strip().splitlines()[-2:]
+    assert first == "True True", out
+    assert second == "True False True", out
 
 
 def test_placement_is_refused_when_what_clears_the_way_cannot_be_planned():

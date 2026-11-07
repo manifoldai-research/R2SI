@@ -14,6 +14,7 @@ from .agent import Agent
 from .bridge import Bridge
 from .client import ModelClient
 from .control import Controller
+from .sam3_service import ServiceSegmenter
 from .segmenter import Segmenter
 from .tools import Tools
 from .icl import configured_retriever
@@ -51,7 +52,10 @@ class AgentRuntime(ModelTemplate):
         self.shape = kinematics.RobotShape(self.arm_model)
         self.rig = cameras.Rig()
         self.planner = planning.Curobo()
-        self.segmenter = Segmenter(self.cfg["segmenter_checkpoint"])
+        # R2SI_SEGMENTER_SERVICE=127.0.0.1:<port> sends segmentation to the host's shared SAM 3 (sam3_service.py), which runs this same
+        # Segmenter on this checkpoint with one session per episode, instead of loading a copy here; unset, SAM 3 loads in this process.
+        service = os.environ.get("R2SI_SEGMENTER_SERVICE")
+        self.segmenter = ServiceSegmenter(service, self.cfg["segmenter_checkpoint"]) if service else Segmenter(self.cfg["segmenter_checkpoint"])
         self.trace_dir = os.environ.get("R2SI_TRACE_DIR") or None
         self._lock = threading.RLock()
         self._episode = None
