@@ -29,7 +29,7 @@ When `R2SI_ICL_CONFIG` or `icl_config` is set, ICL Engine reads an explicitly co
 
 ## Public robot and camera files
 
-The root of these public files is configured by `ROBODOJO_ROOT`, falling back to the parent workspace of XPolicyLab. `R2SI_SEGMENTER_CHECKPOINT` and `R2SI_POLICY_SERVICE` may override the corresponding deployment fields. These variables locate assets and services only.
+The root of these public files is configured by `ROBODOJO_ROOT`, falling back to the parent workspace of XPolicyLab. `R2SI_SEGMENTER_CHECKPOINT` and `R2SI_POLICY_SERVICE` may override the corresponding deployment fields. `R2SI_POLICY_SERVICES` (`{"flash": address, "memory": address}`) gives each WAM profile its own service, so `robo.policy(profile=...)` can reach both. These variables locate assets and services only.
 
 | Constant | File | Used for |
 | --- | --- | --- |
@@ -44,12 +44,12 @@ The root of these public files is configured by `ROBODOJO_ROOT`, falling back to
 
 | Constant | Where | Basis |
 | --- | --- | --- |
-| Table height 0.765 | `frames.TABLE_Z` | The surface the arms are mounted on. It is the default support and the lowest descent; the handbook says to check the surface you work on |
+| Table height 0.765 | `frames.TABLE_Z` | The surface the arms are mounted on. It is the default support and the lowest descent; the tool notes say to check the surface you work on |
 | Where the head camera's stand may be | `cameras.Rig.head_stand`, `cameras.STAND_BEHIND_M`, `cameras.STAND_HALF_WIDTH_M` | What carries the camera stands below it and behind it, out of its view. The box follows from the camera's public pose and a control clearance. Motions do not run into it |
 | Arm base origins | `frames.BASE_ORIGIN` | Rig mounting, also follows from joints and poses |
 | Joint range the planner works in | `robot.WORK_LOW`, `robot.WORK_HIGH` | The description allows +-10 rad on five joints, but the links meet long before that. Joint 1: about half a turn either way, so that the way back never goes around. Joint 2: lower end inside where the upper arm meets the base, measured at about -0.23. Joint 3: from folded to straight. Joints 4 and 5: a little inside their stops, measured at about -2.22 and 1.78, and 1.58 either way. Joint 6: the description's limits. Measured by driving the arm against its stops in the simulator |
 | How far the wrist folds back | `robot.WRIST_FOLD` | The same measurement: joint 4's stop as joint 5 turns, a little inside |
-| Reach figures in the handbook; `frames.ARM_REACH_M`, `frames.ARM_TOP_M` | `knowledge/handbook.md`, `frames.py` | Forward kinematics of the robot description inside the joint range above; they hold in any direction around the arm's base |
+| Reach figures in the tool notes; `frames.ARM_REACH_M`, `frames.ARM_TOP_M` | `knowledge/tool-notes.md`, `frames.py` | Forward kinematics of the robot description inside the joint range above; they hold in any direction around the arm's base |
 | Grasp point offset, pad depth, fingertip reach, jaw span | `frames.py` | Robot description: the fingertip ends 0.1576 m ahead of the flange (`joint7` origin in the URDF plus the extent of `meshes/link7.STL`) |
 | Finger joint origin and travel, spheres along the fingers | `kinematics.py` | Values of the URDF and its meshes written as constants; the spheres are a conservative model of the fingers |
 | Jaw width from reading and command | `control.py` | `gripper_scale` and the gripper rule in the robot configuration |
@@ -76,7 +76,7 @@ Only what its call returns: how many chunks ran, where the arms ended, how many 
 
 `robo.register` lays any two measured planar shapes on each other. `robo.pick(velocity=)` meets anything that moves steadily. `robo.show(outline=)` draws a shape on an image and `robo.show(rotate_deg=)` turns an image. `robo.pick(check_hold=False)` turns off the reading check where a hold does not show in the reading.
 
-## General scoring rules in the handbook
+## General scoring rules in the Memory rules
 
 The section "How work is scored" states how the benchmark usually judges work: every native step is read; everything asked must be true at one step; orientation counts; inside means inside and seated, and parts that fit together fit within millimetres, as parts do; a stated order is part of the job; what was not asked to move stays; work counts per finished item or group and is read only with both grippers fully open, so leave a few steps at the end with them open; the job ends with the arms back at their initial poses and returning counts once everything is in place. Where an instruction states an amount the handbook says to go clearly past it on the side it allows, and to raise high what it only says to pick or lift: margins against measuring error and slip, not a judge's value. The handbook gives no thresholds, and no value is read at run time. Its other sections are working practice.
 

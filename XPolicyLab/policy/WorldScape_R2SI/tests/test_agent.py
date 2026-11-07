@@ -436,23 +436,28 @@ print(max(abs(a - b) for a, b in zip(s['arms']['left']['joints'], s2['arms']['le
     assert len(calls) >= 3
 
 
-def test_slow_motions_take_about_three_times_the_steps():
+def test_slow_motions_take_more_steps_only_while_holding():
+    # slow goes at the tracked step while the hand may hold something (about twice the steps of carrying); an empty hand ignores it.
     code = """
-q = robo.state()['arms']['left']['quaternion_wxyz']
+s = robo.state()['arms']['left']['position']
+e1 = robo.move('left', [s[0] - 0.1, s[1] + 0.1, s[2] - 0.05])
+e2 = robo.move('left', s, slow=True)
+robo.move('left', s, opening=0.0)
 a = robo.turn('left', 'x', 40, frame='tool')
 b = robo.turn('left', 'x', -40, frame='tool', slow=True)
-print(a['steps'], b['steps'])
-s = robo.state()['arms']['left']['position']
 c = robo.move('left', [s[0] - 0.1, s[1] + 0.1, s[2] - 0.05])
 d = robo.move('left', s, slow=True)
+print(e1['steps'], e2['steps'])
+print(a['steps'], b['steps'])
 print(c['steps'], d['steps'])
 """
     client, env, tools = run_episode([code])
     out = outputs(client)[0]
     assert out["status"] == "complete", out
-    turn, move = [[int(v) for v in line.split()] for line in out["stdout"].splitlines()]
-    assert turn[1] >= 2 * turn[0], out
-    assert move[1] >= 2 * move[0], out
+    empty, turn, move = [[int(v) for v in line.split()] for line in out["stdout"].splitlines()]
+    assert empty[1] <= empty[0] + 1, out
+    assert turn[1] >= 1.5 * turn[0], out
+    assert move[1] >= 1.5 * move[0], out
 
 
 def test_a_moving_target_is_met_where_it_will_be():
@@ -470,6 +475,27 @@ print(r['ok'], r['lead_steps'], r['grasp_point'][0] - t[0], t[1])
     ok, lead, offset, _ = out["stdout"].split()
     assert ok == "True" and int(lead) > 5, out
     assert abs(float(offset) - 0.002 * int(lead)) < 0.003, out
+
+
+def test_pick_with_to_checks_the_set_down_too():
+    # With to, the pick takes a hand from which the carry and the set-down there can also be planned; with an unreachable to it still grasps.
+    code = """
+s = robo.state()
+p = s['arms']['left']['position']
+q = robo.hand([0, 0, -1], [1, 0, 0])
+t = [p[0], p[1] + 0.05, p[2] - 0.08]
+r = robo.pick('left', t, quaternion_wxyz=q, clearance_m=0.05, to=[p[0] - 0.05, p[1] + 0.05, p[2] - 0.08])
+print(r['ok'], r.get('to_checked'))
+robo.place('left', [p[0] - 0.05, p[1] + 0.05, p[2] - 0.08])
+r = robo.pick('left', [p[0] - 0.05, p[1] + 0.05, p[2] - 0.08], quaternion_wxyz=q, clearance_m=0.05, to=[5.0, 5.0, 0.8])
+print(r['ok'], r.get('to_checked'), 'to_note' in r)
+"""
+    client, env, tools = run_episode([code])
+    out = outputs(client)[0]
+    assert out["status"] == "complete", out
+    first, second = out["stdout"].strip().splitlines()[-2:]
+    assert first == "True True", out
+    assert second == "True False True", out
 
 
 def test_placement_is_refused_when_what_clears_the_way_cannot_be_planned():
@@ -1106,8 +1132,31 @@ def test_a_session_reports_a_broken_service_as_a_failure():
 
 def test_prompt_text_is_generic():
     text = prompt.system_prompt()
-    assert len(text) < 40000, len(text)
+    # Memory rules, tool notes, the always-loaded Skills (with the WSP Skill) and the on-demand catalog replace the former handbook.
+    assert len(text) < 52000, len(text)
     assert "episode ends" not in text.lower() and "episode is over" not in text.lower(), "the prompt must not teach the end of the episode as a signal"
+
+
+def test_prompt_loads_memory_rules_and_always_skills():
+    from XPolicyLab.policy.WorldScape_R2SI.skills import ROOT, library
+    text = prompt.system_prompt()
+    parts = prompt.parts()
+    lib = library()
+    memory = sorted((ROOT / "memory").glob("*.md"))
+    assert memory and parts["memory_rules"] == [path.name for path in memory], parts
+    for path in memory:
+        assert path.read_text(encoding="utf-8") in text, path.name
+    always = [key for key, entry in lib.entries.items() if entry.get("load_mode") == "always"]
+    assert always and sorted(always) == parts["skills_always"], parts
+    for key in always:
+        assert lib.entries[key]["text"] in text, key
+    for row in lib.catalog("skill"):
+        if lib.entries[row["id"]].get("load_mode") != "always":
+            assert f"- {row['id']}: " in text and lib.entries[row["id"]]["text"] not in text, row["id"]
+    assert parts["skills_on_demand"] == len(lib.entries) - len(always)
+    assert "handbook" not in text.lower()
+    # ICL usage guidance is part of the robo.reference tool description, given once.
+    assert text.count("ICL-RAG is your core demonstration-reference tool.") == 1
 
 
 def main():

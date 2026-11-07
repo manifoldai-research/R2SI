@@ -1,49 +1,12 @@
 {
   "schema": "r2si.trial-state-remediation.v1",
   "validated_at_utc": "2026-11-05T14:00:00.933572+00:00",
-  "release_sha256": "2bf918636552a85325df12a44e2e3a178375d33b9b7506c74c7e65a6b332da72",
+  "release_sha256": "9b0c56d0a4af19705432675d02e9e1cf0d9682edfe30077fe0919b70741b2748",
   "official_baseline_commit": "7074afbcb2223caf21dcee9a803f1025b2c8c76b",
   "official_single_entry_eligible": false,
   "eligibility_status": "current_simulator_and_clean_environment_reproduction_not_completed",
   "current_release_checks": {
-    "release_sha256": "2bf918636552a85325df12a44e2e3a178375d33b9b7506c74c7e65a6b332da72",
-    "cpu_regression": {
-      "exit_code": 0,
-      "tests_passed": 368,
-      "subtests_passed": 96,
-      "elapsed_seconds": 184.19,
-      "tested_git_tree": "eaae6d5a7de07ff62a025d78d4927aa9c834a595",
-      "platform": "Linux / Python 3.11 / CUDA_VISIBLE_DEVICES empty",
-      "command": "python -B -m pytest -p no:cacheprovider -o faulthandler_timeout=90 -q tests XPolicyLab/policy/WorldScape_R2SI/harness/tests XPolicyLab/policy/WorldScape_R2SI/tests"
-    },
-    "migration_audit": {
-      "curobo_files_unchanged": 638,
-      "skill_files_unchanged": 80,
-      "wam_files_retained": 212,
-      "wam_implementation_unchanged": true,
-      "shared_xpolicylab_files_unchanged": true,
-      "executable_modes_preserved": true,
-      "single_agent_entry": true
-    },
-    "shell_syntax": {
-      "passed": true
-    },
-    "wsp_training_cli": {
-      "expected_exit_code": 2,
-      "observed_exit_code": 2
-    },
-    "gpu_model_loading": {
-      "performed": false
-    },
-    "clean_dependency_installation": {
-      "performed": false
-    },
-    "debug_closed_loop": {
-      "performed": false
-    },
-    "simulator_evaluation": {
-      "performed": false
-    }
+    "status": "requires_validation_for_new_identity"
   },
   "historical_audits": [
     {
@@ -734,6 +697,57 @@
           "Contact admissibility is supplied by the Agent and is not certified by the selector.",
           "No task-success or wall-clock improvement is claimed."
         ]
+      },
+      "reason": "Source/documentation changed; earlier checks remain historical"
+    },
+    {
+      "release_sha256": "2bf918636552a85325df12a44e2e3a178375d33b9b7506c74c7e65a6b332da72",
+      "checks": {
+        "release_sha256": "2bf918636552a85325df12a44e2e3a178375d33b9b7506c74c7e65a6b332da72",
+        "cpu_regression": {
+          "exit_code": 0,
+          "tests_passed": 368,
+          "subtests_passed": 96,
+          "elapsed_seconds": 184.19,
+          "tested_git_tree": "eaae6d5a7de07ff62a025d78d4927aa9c834a595",
+          "platform": "Linux / Python 3.11 / CUDA_VISIBLE_DEVICES empty",
+          "command": "python -B -m pytest -p no:cacheprovider -o faulthandler_timeout=90 -q tests XPolicyLab/policy/WorldScape_R2SI/harness/tests XPolicyLab/policy/WorldScape_R2SI/tests"
+        },
+        "migration_audit": {
+          "curobo_files_unchanged": 638,
+          "skill_files_unchanged": 80,
+          "wam_files_retained": 212,
+          "wam_implementation_unchanged": true,
+          "shared_xpolicylab_files_unchanged": true,
+          "executable_modes_preserved": true,
+          "single_agent_entry": true
+        },
+        "shell_syntax": {
+          "passed": true
+        },
+        "wsp_training_cli": {
+          "expected_exit_code": 2,
+          "observed_exit_code": 2
+        },
+        "gpu_model_loading": {
+          "performed": false
+        },
+        "clean_dependency_installation": {
+          "performed": false
+        },
+        "debug_closed_loop": {
+          "performed": false
+        },
+        "simulator_evaluation": {
+          "performed": false
+        }
+      },
+      "reason": "Source/documentation changed; earlier checks remain historical"
+    },
+    {
+      "release_sha256": "22a175bed0c1b62f649e3681341fbdd55497ccd49fc395a35f1efdf3a5bbc225",
+      "checks": {
+        "status": "requires_validation_for_new_identity"
       },
       "reason": "Source/documentation changed; earlier checks remain historical"
     }

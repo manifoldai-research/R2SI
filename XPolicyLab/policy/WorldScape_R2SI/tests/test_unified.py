@@ -16,7 +16,7 @@ from XPolicyLab.policy.WorldScape_R2SI.tests.harness import KinematicEnv, Script
 def test_public_entry_runs_code_cells_skills_and_trace(tmp_path):
     checkpoint = tmp_path / 'sam3.pt'
     checkpoint.touch()
-    client = ScriptedClient(['robo.read_skill("grasp-support-release"); robo.wait(2)'])
+    client = ScriptedClient(['robo.read_skill("grasp-by-shape"); robo.wait(2)'])
     client.close = lambda: client.ended.set()
     cfg = yaml.safe_load(Path(model.__file__).with_name('deploy.yml').read_text())
     cfg.update(task_name='fixture', segmenter_checkpoint=str(checkpoint), keepalive_s=.1)

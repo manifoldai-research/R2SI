@@ -267,17 +267,18 @@ class Controller:
                 return turned
         return q
 
-    def free_route(self, observation, arm, position, q, start=None, may_turn=False, q_from=None):
+    def free_route(self, observation, arm, position, q, start=None, may_turn=False, q_from=None, hold=False):
         """A free motion that does not run into what has been measured or dip into the table: (joint path, orientation it arrives with, None), or (None, None, reason). The planner's
         path when that is clear, otherwise straight up, across at a height that clears the object, and straight down. q_from is the hand's orientation at start, when that is not the present one."""
         path, arrived, reason = self.free_path(observation, arm, position, q, start=start, may_turn=may_turn)
+        holding = bool(hold) or self.may_hold(observation, arm)
         if path is None or self.forced:
             return path, arrived, reason
-        if self.may_hold(observation, arm) and abs(float(path[-1][-1] - path[0][-1])) > SPIN_LIMIT_RAD:
+        if holding and abs(float(path[-1][-1] - path[0][-1])) > SPIN_LIMIT_RAD:
             turn = abs(float(path[-1][-1] - path[0][-1]))
             return None, None, (f"carrying it this way would spin the wrist {math.degrees(turn):.0f} degrees, because this orientation lies past the end of the wrist's range. Use the "
                                 "orientation half a turn away if the object allows it, or put it down and grasp it with the wrist turned the other way; force=True goes anyway")
-        if self.may_hold(observation, arm) and frames.angle_deg(frames.half_turned(self.grasp(observation, arm)[1] if q_from is None else q_from), arrived) <= HALF_TURN_NEAR_DEG:
+        if holding and frames.angle_deg(frames.half_turned(self.grasp(observation, arm)[1] if q_from is None else q_from), arrived) <= HALF_TURN_NEAR_DEG:
             return None, None, ("this orientation is half a turn from the hand's now, about its pointing axis, so what it holds would come out turned over or end for end. To keep it as it is, "
                                 "give the hand's present orientation or none, or symmetry=2 where that is offered and the object looks the same; force=True makes the half turn")
         hit = self.object_hit(observation, arm, path)
@@ -374,14 +375,16 @@ class Controller:
             return None, f"this straight motion would run the arm into {self.post.text}"
         return path, None
 
-    def route(self, observation, arm, legs, paths=None):
+    def route(self, observation, arm, legs, paths=None, hold_after=None):
         """Plan legs (name, "free" or "line", position, orientation) one after another without moving. None when all of them
         can be planned, otherwise (name of the first that cannot, reason). A free leg may arrive half-turned, as an executed
-        one may; later legs then keep that hand. `paths`, when given, collects (name, joint path) of the planned legs."""
+        one may; later legs then keep that hand. `paths`, when given, collects (name, joint path) of the planned legs.
+        hold_after names a leg after which the hand is planned as holding a load (no half turn, the carrying limits)."""
         joints = self.joints(observation, arm).copy()
         here, q_here = self.grasp(observation, arm)
         half = False
         may_turn = self.commanded_opening(observation, arm) >= TURN_MIN_OPENING
+        hold = False
         for name, kind, position, q in legs:
             position = np.asarray(position, dtype=np.float64)
             q = frames.normalized(q)
@@ -389,7 +392,7 @@ class Controller:
                 q = frames.half_turned(q)
             if kind == "free":
                 if float(np.linalg.norm(position - here)) > 0.003 or frames.angle_deg(q_here, q) > 1.0:
-                    path, arrived, reason = self.free_route(observation, arm, position, q, start=joints, may_turn=may_turn, q_from=q_here)
+                    path, arrived, reason = self.free_route(observation, arm, position, q, start=joints, may_turn=may_turn and not hold, q_from=q_here, hold=hold)
                     if path is None:
                         return name, reason
                     if frames.angle_deg(arrived, q) > 1.0:
@@ -405,6 +408,8 @@ class Controller:
                 if paths is not None:
                     paths.append((name, path))
             here, q_here = position, q
+            if hold_after is not None and name == hold_after:
+                hold = True
         return None
 
     # -- checks along a motion ------------------------------------------------------------------

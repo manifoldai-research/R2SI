@@ -74,7 +74,7 @@ class LocalRSI(unittest.TestCase):
             for name,expected in spec['source_files'].items():
                 self.assertEqual(sha256(root/'XPolicyLab/policy/WorldScape_R2SI'/name),expected)
         self.assertEqual(lib.entries['support-fit-local-test']['scope'],'generic')
-        self.assertIn('grasp-support-release',lib.entries)
+        self.assertIn('grasp-by-shape',lib.entries)
         self.assertIn('LOCAL_RSI_TEST_SENTINEL',((root/HARNESS).parent/'tools.py').read_text())
         self.assertEqual((root/HARNESS/'memory/retain-contact.md').read_text(),'Remember whether support was observed.')
         second=build_release(self.ws,root,checkpoints,skill_updates=[dict(id='next-round',text='Retain the earlier contact evidence.')])

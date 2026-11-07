@@ -11,5 +11,5 @@
   "dependencies": [],
   "description": "Policy能力先验与受证据约束的委托",
   "implementation": "text",
-  "load_mode": "always"
+  "load_mode": "on_demand"
 }

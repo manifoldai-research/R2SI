@@ -230,9 +230,10 @@ class Pick(Goal):
     """One grasp: pre-grasp point, straight approach, close, short checked lift, lift."""
 
     def __init__(self, ctl, arm, observation, position, quaternion=None, approach="pointing", clearance_m=CLEARANCE_M, opening=1.0,
-                 lift_m=LIFT_M, symmetry=1, check_hold=True, look=None, velocity=None, source=None):
+                 lift_m=LIFT_M, symmetry=1, check_hold=True, look=None, velocity=None, source=None, to=None):
         super().__init__(ctl, arm)
         self.source = source             # the measured object this grasp takes, if any
+        self.to = None if to is None else _vector(to, 3, "to")   # the grasp point at a later set-down, to choose a hand that reaches both
         self.velocity = None if velocity is None else np.r_[_vector(velocity, 2, "velocity"), 0.0]
         self.closing_steps = 0           # native steps from the pre-grasp point to the fingers on a moving target
         self.p = _vector(position, 3, "position")
@@ -290,10 +291,22 @@ class Pick(Goal):
         self.closing_steps = rows.get("approach", 0) + LEAD_CLOSE_STEPS
         return sum(rows.values()) + LEAD_CLOSE_STEPS
 
+    def _place_legs(self, q, lift):
+        """The carry and set-down that a later placement at `to` would need from the lifted pose, held as now."""
+        top = self.p + lift * UP
+        travel = max(float(top[2]), float(self.to[2]) + CLEARANCE_M)
+        legs = []
+        if travel - float(top[2]) > 0.005:
+            legs.append(("carry up", "line", np.r_[top[:2], travel], q))
+        return legs + [("carry over", "free", np.r_[self.to[:2], travel], q), ("set down", "line", self.to, q)]
+
     def _plan(self, observation):
         """As asked, with a shorter approach, then with the hand tilted about its closing axis; a level jaw may also come from
-        straight above, the open fingers passing on both sides of the object. Refused at 0 steps when nothing can be planned."""
+        straight above, the open fingers passing on both sides of the object. With `to`, the first of these from which the
+        carry and the set-down at `to` can also be planned is taken; if none, the first that grasps (to_checked False).
+        Refused at 0 steps when nothing can be planned."""
         ctl, arm = self.ctl, self.arm
+        fallback = None
         choices = [(self.q, self.clearance, 0.0)]
         choices += [(self.q, c, 0.0) for c in SMALLER_CLEARANCES_M if c < self.clearance]
         choices += [(frames.tilted(self.q, t), self.clearance, t) for t in TILTS_DEG]
@@ -311,19 +324,36 @@ class Pick(Goal):
                             self.values["lift_used_m"] = round(shorter, 3)
                             break
                 if blocked is None:
-                    if kind != self.approach:
-                        self.values["approach_used"] = kind
-                    if clearance != self.clearance:
-                        self.values["clearance_used_m"] = clearance
-                    if tilt:
-                        self.values["tilt_used_deg"] = tilt
-                    self.q, self.clearance, self.approach = frames.normalized(q), clearance, kind
-                    return None
+                    if self.to is not None:
+                        both = ctl.route(observation, arm, self._legs_for(q, clearance, kind, self.lift) + self._place_legs(frames.normalized(q), self.lift),
+                                         hold_after="lift")
+                        if both is not None:
+                            if fallback is None:
+                                fallback = (q, clearance, kind, tilt, self.lift, both)
+                            continue
+                        self.values["to_checked"] = True
+                    return self._take(q, clearance, kind, tilt)
+        if fallback is not None:
+            q, clearance, kind, tilt, self.lift, why = fallback
+            self.values["to_checked"] = False
+            self.values["to_note"] = (f"no hand orientation tried reaches both this grasp and the set-down at to ({why[0]}: {why[1]}); "
+                                      "grasped as it would be without to")
+            return self._take(q, clearance, kind, tilt)
         other = "right" if arm == "left" else "left"
         other_can = any(ctl.route(observation, other, self._legs_for(frames.tilted(self.q, t), self.clearance, self.approach, self.lift)) is None
                         for t in (0.0, *TILTS_DEG[:2]))
         return self.refuse("unreachable", f"nothing moved: the {blocked[0]} of this grasp cannot be planned for this arm ({blocked[1]}), also not "
                            "tilted about the closing axis or with a shorter approach", other_arm_can=other_can)
+
+    def _take(self, q, clearance, kind, tilt):
+        if kind != self.approach:
+            self.values["approach_used"] = kind
+        if clearance != self.clearance:
+            self.values["clearance_used_m"] = clearance
+        if tilt:
+            self.values["tilt_used_deg"] = tilt
+        self.q, self.clearance, self.approach = frames.normalized(q), clearance, kind
+        return None
 
     def legs(self):
         return self._legs_for(self.q, self.clearance, self.approach, self.lift)
@@ -784,7 +814,7 @@ class Runner:
                         results.update({a: StageResult(ok=False, code="unreachable", reason=reason) for a in paths})
                         return results
         # A straight motion is careful while it holds something or descends; free motions may use the speed profile. A caller may ask any motion to go slowly.
-        careful = any(stages[arm].slow for arm in paths)
+        careful = any(stages[arm].slow and ctl.may_hold(observation, arm) for arm in paths)   # an empty hand has nothing to shake
         for arm in lines:
             stage = stages[arm]
             if stage.careful and ctl.may_hold(observation, arm):

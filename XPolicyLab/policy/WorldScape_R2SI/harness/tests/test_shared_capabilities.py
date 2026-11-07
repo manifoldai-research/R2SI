@@ -37,7 +37,7 @@ class SharedCatalogTests(unittest.TestCase):
         lib = SkillLibrary(PROBE / 'skills')
         self.assertGreater(len(lib.catalog('skill')), 5)
         self.assertTrue({e['scope'] for e in lib.entries.values()} == {'generic'})
-        self.assertIn('robodojo-interface', lib.initial())
+        self.assertTrue(any(e.get('load_mode') == 'always' for e in lib.entries.values()))
         # Check payload inclusion by manifest policy, not by catalog name.
         initial = lib.initial()
         self.assertLessEqual(len(initial), 24000)
@@ -66,7 +66,7 @@ class SharedCatalogTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 SkillLibrary(root)
             (root / 'tasks').rmdir()
-            manifest = root / 'generic/goal-interpretation/manifest.json'
+            manifest = root / 'generic/grasp-by-shape/manifest.json'
             original = json.loads(manifest.read_text(encoding='utf-8'))
             for field in ('task_context_file', 'task_ids', 'aliases', 'keywords', 'routes'):
                 data = {**original, field: ['injected']}

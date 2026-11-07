@@ -9,11 +9,12 @@ from pathlib import Path
 from XPolicyLab.model_template import ModelTemplate
 from XPolicyLab.utils.process_data import get_robot_action_dim_info
 
-from . import cameras, kinematics, monitor, planning, robot
+from . import cameras, kinematics, monitor, planning, prompt, robot
 from .agent import Agent
 from .bridge import Bridge
 from .client import ModelClient
 from .control import Controller
+from .sam3_service import ServiceSegmenter
 from .segmenter import Segmenter
 from .tools import Tools
 from .icl import configured_retriever
@@ -32,7 +33,11 @@ class AgentRuntime(ModelTemplate):
         dimensions = get_robot_action_dim_info(self.cfg["env_cfg_type"])
         if list(dimensions["arm_dim"]) != [6, 6] or list(dimensions["ee_dim"]) != [1, 1]:
             raise ValueError("R2SI requires the arx_x5 two-arm, one-gripper-channel configuration")
-        self.cfg["policy_service"] = os.environ.get("R2SI_POLICY_SERVICE") or self.cfg["policy_service"]
+        # R2SI_POLICY_SERVICES ({"flash": address, "memory": address}) lets robo.policy(profile=...) reach each profile's own service.
+        services = json.loads(os.environ.get("R2SI_POLICY_SERVICES") or "{}")
+        self.policy_services = {name: address for name, address in services.items() if name in ("flash", "memory") and address}
+        self.cfg["policy_service"] = (os.environ.get("R2SI_POLICY_SERVICE") or self.cfg["policy_service"]
+                                      or self.policy_services.get("flash") or self.policy_services.get("memory"))
         checkpoint = Path(os.environ.get("R2SI_SEGMENTER_CHECKPOINT") or self.cfg["segmenter_checkpoint"]).expanduser()
         if not checkpoint.is_absolute():
             checkpoint = robot.WORKSPACE / checkpoint
@@ -47,7 +52,10 @@ class AgentRuntime(ModelTemplate):
         self.shape = kinematics.RobotShape(self.arm_model)
         self.rig = cameras.Rig()
         self.planner = planning.Curobo()
-        self.segmenter = Segmenter(self.cfg["segmenter_checkpoint"])
+        # R2SI_SEGMENTER_SERVICE=127.0.0.1:<port> sends segmentation to the host's shared SAM 3 (sam3_service.py), which runs this same
+        # Segmenter on this checkpoint with one session per episode, instead of loading a copy here; unset, SAM 3 loads in this process.
+        service = os.environ.get("R2SI_SEGMENTER_SERVICE")
+        self.segmenter = ServiceSegmenter(service, self.cfg["segmenter_checkpoint"]) if service else Segmenter(self.cfg["segmenter_checkpoint"])
         self.trace_dir = os.environ.get("R2SI_TRACE_DIR") or None
         self._lock = threading.RLock()
         self._episode = None
@@ -60,6 +68,7 @@ class AgentRuntime(ModelTemplate):
             bridge = Bridge(monitor.Monitor(self.spec), float(self.cfg["keepalive_s"]))
             controller = Controller(self.spec, self.arm_model, self.planner, bridge, self.rig.head_stand())
             tools = Tools(controller, self.rig, self.shape, self.segmenter, self.cfg["policy_service"])
+            tools.policy_services = dict(self.policy_services)
             if self.wam_catalog and not self.cfg['policy_service']:
                 from .wam import BundledSessions
                 sessions = BundledSessions(self.wam_catalog, self.deployment)
@@ -68,7 +77,8 @@ class AgentRuntime(ModelTemplate):
             client = ModelClient(model=self.cfg["model"], effort=self.cfg["effort"], timeout_s=float(self.cfg["request_timeout_s"]), trace_dir=self.trace_dir)
             agent = Agent(client, tools, bridge, retriever=self.retriever)
             thread = threading.Thread(target=agent.run, name="agent", daemon=True)
-            self._episode = {"bridge": bridge, "controller": controller, "tools": tools, "client": client, "agent": agent, "thread": thread}
+            self._episode = {"bridge": bridge, "controller": controller, "tools": tools, "client": client, "agent": agent, "thread": thread,
+                             "prompt_parts": prompt.parts()}
             thread.start()
             return {"ok": True}
 
@@ -117,7 +127,7 @@ class AgentRuntime(ModelTemplate):
         if observation is None or (episode is self._episode and observation.step % 25):
             return
         row = {"steps": observation.step, "decisions": agent.decisions, "cells": agent.cells, "keepalive_holds": bridge.keepalive_holds,
-               "icl_reference": agent.reference.info(),
+               "icl_reference": agent.reference.info(), "prompt_parts": episode.get("prompt_parts"),
                "interruptions": bridge.interruptions, "contact_stops": bridge.contact_stops, **episode["controller"].counters, **episode["tools"].counters}
         path = Path(self.trace_dir) / ("metrics-" + episode["client"].session_id + ".json")
         temporary = path.with_suffix(".tmp")
